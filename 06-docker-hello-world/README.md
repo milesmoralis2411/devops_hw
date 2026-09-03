@@ -74,8 +74,8 @@ curl http://localhost:8083        # -> Hello World from Nginx!
 docker ps
 ```
 
-> Add screenshots of each webpage and of `docker ps` into a `screenshots/`
-> folder here and reference them below.
+> ✅ Screenshots of all 6 webpages and `docker ps` are in
+> [`screenshots/`](screenshots/) and embedded in [`EVIDENCE.md`](EVIDENCE.md).
 
 ## Cleanup
 

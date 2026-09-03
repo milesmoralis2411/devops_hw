@@ -6,6 +6,16 @@
 All commands below were actually run on Docker Desktop (Engine v29.7.2, WSL2
 backend). Real output is captured verbatim.
 
+## Screenshots
+
+**Application running on port 8080:**
+
+![app on 8080](screenshots/multistage-8080.png)
+
+**`docker ps` showing the container on port 8080:**
+
+![docker ps](screenshots/docker-ps.png)
+
 ## Build
 
 ```

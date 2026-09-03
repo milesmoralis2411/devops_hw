@@ -3,6 +3,21 @@
 All 6 apps were actually built and run on Docker Desktop (Engine v29.7.2, WSL2
 backend). Real output captured verbatim below.
 
+## Screenshots (live browser + docker ps)
+
+| App | Screenshot |
+|-----|-----------|
+| Node.js (`:3000`) | ![node](screenshots/nodejs-app.png) |
+| Python/Flask (`:5000`) | ![python](screenshots/python-app.png) |
+| Java (`:8085`) | ![java](screenshots/java-app.png) |
+| Apache (`:8081`) | ![apache](screenshots/apache-app.png) |
+| React (`:8082`) | ![react](screenshots/react-app.png) |
+| Nginx (`:8083`) | ![nginx](screenshots/nginx-app.png) |
+
+**All containers running (`docker ps`):**
+
+![docker ps](screenshots/docker-ps.png)
+
 ## `docker ps` — all 6 apps running
 
 ```
