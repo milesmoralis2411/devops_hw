@@ -63,6 +63,28 @@ rm softlink.txt      # removes only the symlink
 rm hardlink.txt      # removes one name; data freed only when link count hits 0
 ```
 
+### Verified on this machine (hard link)
+
+Running the hard-link steps in a shell here produced real output confirming the
+**shared inode** and **link count of 2**:
+
+```text
+$ ln original.txt hardlink.txt
+$ ls -li
+1970324839802419 -rw-r--r-- 2 ... 17 hardlink.txt   <-- inode ...802419, links=2
+1970324839802419 -rw-r--r-- 2 ... 17 original.txt   <-- SAME inode, links=2
+
+$ rm original.txt
+$ cat hardlink.txt
+original content                                     <-- data survived deletion
+```
+
+> **Windows note:** the **soft-link** demonstration needs a real Linux host (or
+> Windows *Developer Mode*). Git Bash on Windows either copies the target instead
+> of creating a symlink, or fails with *"Operation not permitted"* — so the
+> "dangling symlink breaks" behaviour above can only be reproduced on Linux. The
+> hard-link output above was captured for real.
+
 ### Interview one-liner
 > A **hard link** is a second directory entry pointing to the same inode (same
 > data), works only within one filesystem, and can't link directories. A **soft
