@@ -3,6 +3,21 @@
 All four tasks were actually executed on Docker Desktop (Engine v29.7.2, WSL2
 backend). Real command output is captured verbatim below.
 
+## Screenshots
+
+**Task 1 — connectivity & isolation** (backend reaches frontend + database;
+frontend cannot reach database):
+
+![connectivity](screenshots/task1-connectivity.png)
+
+**Task 3 — bind mount live edit** (content changes without restart):
+
+![bind mount](screenshots/task3-bind-mount.png)
+
+**Task 4 — overlay network + Swarm service:**
+
+![overlay](screenshots/task4-overlay.png)
+
 ---
 
 ## Task 1: Container Networking (3 networks, backend on 2+)
