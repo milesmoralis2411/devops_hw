@@ -18,15 +18,26 @@ commands, and output/explanations.
 
 ## How this repo was completed
 
-- **Tasks executed live** (real output captured in the READMEs): the shell script
-  (03), the Git commit/cherry-pick workflow (05), and the networking commands (04).
-- **Docker tasks (01, 06, 07):** all application code and `Dockerfile`s are
-  provided and ready to build/run. Each README lists the exact `docker build` /
-  `docker run` commands and the expected result. Docker was not installed on the
-  machine used to author this repo, so add your own screenshots of the running
-  containers into a `screenshots/` folder under each Docker homework.
-- **Linux tasks (02):** documented with commands and comparison tables (best run
-  on a native Linux host).
+Almost everything was **executed live** and the real command output is captured
+in the READMEs / `EVIDENCE.md` files:
+
+- **03 Shell script** — ran `sysinfo.sh`, real output in its README.
+- **04 Networking** — ran the commands, real output + explanations.
+- **05 Git** — ran the `commit -a -m` and cherry-pick workflow, real output.
+- **01 Docker networking & volumes** — all 4 tasks run on Docker Desktop
+  (Engine v29.7.2, WSL2). See [`EVIDENCE.md`](01-docker-networking-volumes/EVIDENCE.md):
+  network isolation proven, host-network port 80 confirmed, bind-mount live edit,
+  overlay service converged.
+- **06 Docker Hello World** — all 6 apps built and running, each returns
+  "Hello World". See [`EVIDENCE.md`](06-docker-hello-world/EVIDENCE.md).
+- **07 Docker multi-stage** — built & run on port 8080, final image only 23.2 MB.
+  See [`EVIDENCE.md`](07-docker-multi-stage/EVIDENCE.md).
+- **02 Linux** — documented with commands and comparison tables (best run on a
+  native Linux host; e.g. `journalctl`, `adduser` need real Linux/root).
+
+> The `EVIDENCE.md` files contain the verbatim terminal output. For image-style
+> screenshots (browser windows), open the running apps at the ports listed and
+> capture them — the apps are live once you run the build commands.
 
 ## Quick start (Docker homeworks)
 
