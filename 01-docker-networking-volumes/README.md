@@ -4,8 +4,9 @@ This homework covers Docker container networking, the host network, bind mounts,
 and overlay networks. Each task lists the exact commands to run and the expected
 result. Run these on any machine with Docker installed.
 
-> Add screenshots of each step into a `screenshots/` folder and reference them
-> under the matching task (e.g. `![task1](screenshots/task1.png)`).
+> ✅ **All 4 tasks were actually executed** — see [`EVIDENCE.md`](EVIDENCE.md)
+> for the real, verbatim command output (network isolation, host-network port 80,
+> live bind-mount edit, and an overlay service converging on Swarm).
 
 ---
 
