@@ -2,11 +2,11 @@
 
 ## Task 2: Documentation
 
-- **Name:** _<add your name>_
-- **Enrollment number:** _<add your enrollment number>_
+- **Name:** Varun Mundada
+- **Enrollment number:** 24BCS10326
 
-> Replace the placeholders above, then add screenshots of the running app and of
-> `docker ps` into a `screenshots/` folder and reference them at the bottom.
+> Add screenshots of the running app and of `docker ps` into a `screenshots/`
+> folder and reference them at the bottom.
 
 ---
 
