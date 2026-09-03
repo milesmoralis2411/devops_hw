@@ -32,8 +32,10 @@ in the READMEs / `EVIDENCE.md` files:
   "Hello World". See [`EVIDENCE.md`](06-docker-hello-world/EVIDENCE.md).
 - **07 Docker multi-stage** — built & run on port 8080, final image only 23.2 MB.
   See [`EVIDENCE.md`](07-docker-multi-stage/EVIDENCE.md).
-- **02 Linux** — documented with commands and comparison tables (best run on a
-  native Linux host; e.g. `journalctl`, `adduser` need real Linux/root).
+- **02 Linux** — Tasks 1–3 executed on **Ubuntu 26.04 (WSL2, systemd 259)**:
+  soft/hard links (with the symlink correctly breaking), `adduser` created a real
+  user, `journalctl` returned real logs. See
+  [`EVIDENCE.md`](02-linux/EVIDENCE.md).
 
 > The `EVIDENCE.md` files contain the verbatim terminal output. For image-style
 > screenshots (browser windows), open the running apps at the ports listed and
