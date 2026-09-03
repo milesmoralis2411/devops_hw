@@ -78,14 +78,11 @@ After deploying, `docker ps` should list all running containers.
 
 ## Evidence / Screenshots
 
-Add these once run on a machine with Docker:
+Verified and captured — see [`EVIDENCE.md`](EVIDENCE.md) and `screenshots/`:
 
-- [ ] Browser/curl showing `Hello World from Docker multi-stage build`
-- [ ] `docker ps` showing the container on port 8080
-- [ ] `docker images` showing the small final image size
-- [ ] `docker ps` showing the 3 deployed app types (Task 3)
-
-```
-<!-- ![app running](screenshots/app-running.png) -->
-<!-- ![docker ps](screenshots/docker-ps.png) -->
-```
+- [x] Browser showing `Hello World from Docker multi-stage build` —
+  ![app on 8080](screenshots/multistage-8080.png)
+- [x] `docker ps` showing the container on port 8080 —
+  ![docker ps](screenshots/docker-ps.png)
+- [x] `docker images` showing the small final image size (23.2 MB) — in `EVIDENCE.md`
+- [x] 3 deployed app types (Node/Python/Java) running — in `EVIDENCE.md` / `docker ps`
