@@ -63,27 +63,21 @@ rm softlink.txt      # removes only the symlink
 rm hardlink.txt      # removes one name; data freed only when link count hits 0
 ```
 
-### Verified on this machine (hard link)
+### ✅ Verified on real Linux (Ubuntu 26.04, WSL2)
 
-Running the hard-link steps in a shell here produced real output confirming the
-**shared inode** and **link count of 2**:
+Executed via [`linux-tasks.sh`](linux-tasks.sh) — full output + screenshot in
+[`EVIDENCE.md`](EVIDENCE.md):
 
 ```text
-$ ln original.txt hardlink.txt
 $ ls -li
-1970324839802419 -rw-r--r-- 2 ... 17 hardlink.txt   <-- inode ...802419, links=2
-1970324839802419 -rw-r--r-- 2 ... 17 original.txt   <-- SAME inode, links=2
+37 -rw-r--r-- 2 root root 17 hardlink.txt              <-- inode 37, link count 2
+37 -rw-r--r-- 2 root root 17 original.txt              <-- SAME inode 37
+38 lrwxrwxrwx 1 root root 12 softlink.txt -> original.txt
 
 $ rm original.txt
-$ cat hardlink.txt
-original content                                     <-- data survived deletion
+$ cat hardlink.txt   ->  original content               (SURVIVES via inode)
+$ cat softlink.txt   ->  cat: softlink.txt: No such file or directory   (BREAKS)
 ```
-
-> **Windows note:** the **soft-link** demonstration needs a real Linux host (or
-> Windows *Developer Mode*). Git Bash on Windows either copies the target instead
-> of creating a symlink, or fails with *"Operation not permitted"* — so the
-> "dangling symlink breaks" behaviour above can only be reproduced on Linux. The
-> hard-link output above was captured for real.
 
 ### Interview one-liner
 > A **hard link** is a second directory entry pointing to the same inode (same
@@ -134,6 +128,9 @@ sudo useradd -m -s /bin/bash testuser2   # -m creates home, -s sets shell
 sudo passwd testuser2                     # set password separately
 ```
 
+> ✅ **Executed on Ubuntu 26.04** — `adduser` created `testuser` with home
+> `/home/testuser` and shell `/bin/bash` (`uid=1001`). See [`EVIDENCE.md`](EVIDENCE.md).
+
 ---
 
 ## Task 3: `journalctl`
@@ -179,6 +176,10 @@ journalctl -u ssh.service -n 20 --no-pager
 
 **Expected:** a timestamped stream of that service's log lines, e.g.
 `Jan 01 10:15:22 host sshd[1234]: Accepted password for user from ...`.
+
+> ✅ **Executed on Ubuntu 26.04 (systemd 259)** — `journalctl -n`, `-k`, and
+> `-u cron` all returned real journal entries (it even captured the `adduser`
+> events from Task 2). See [`EVIDENCE.md`](EVIDENCE.md).
 
 ---
 
