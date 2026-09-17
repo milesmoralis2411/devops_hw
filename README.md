@@ -6,15 +6,23 @@ commands, and output/explanations.
 
 ## Contents
 
-| # | Folder | Topic | Deliverables |
-|---|--------|-------|--------------|
-| 1 | [`01-docker-networking-volumes/`](01-docker-networking-volumes/) | Docker container/host/overlay networking & bind-mount volumes | Documented commands + expected output for all 4 tasks |
-| 2 | [`02-linux/`](02-linux/) | Soft/hard links, `adduser` vs `useradd`, `journalctl`, cheat sheet | Full explanations, commands, comparison tables |
-| 3 | [`03-shell-scripting/`](03-shell-scripting/) | System-information shell script | [`sysinfo.sh`](03-shell-scripting/sysinfo.sh) + real captured output |
-| 4 | [`04-networking/`](04-networking/) | Networking commands (`ping`, DNS, `curl`, `ip addr`, …) | [`README.md`](04-networking/README.md) with real output + explanations |
-| 5 | [`05-git/`](05-git/) | `git commit -a -m` vs `-m`, cherry-pick | Real command output + `demo-repo/` |
-| 6 | [`06-docker-hello-world/`](06-docker-hello-world/) | 6 "Hello World" Dockerized apps | Node, Python, Java, Apache, React, Nginx — code + Dockerfiles |
-| 7 | [`07-docker-multi-stage/`](07-docker-multi-stage/) | Multi-stage Docker build on port 8080 | Go app + multi-stage Dockerfile + docs |
+| # | Section | Topic |
+|---|---------|-------|
+| 1 | [01-linux-fundamentals](02-linux/) | Links, user management, journalctl, command cheat sheet |
+| 2 | [02-shell-scripting](03-shell-scripting/) | System information script |
+| 3 | [03-networking-fundamentals](04-networking/) | Networking command practice |
+| 4 | [04-git-github](05-git/) | Commit behavior and cherry-pick |
+| 5 | [05-docker-fundamentals](06-docker-hello-world/) | Containerizing NGINX, Apache, Node.js, Python, Java, and React apps |
+| 6 | [06-dockerfiles-images](07-docker-multi-stage/) | Dockerfiles, image builds, and multi-stage builds |
+| 7 | [07-docker-networking-volumes](01-docker-networking-volumes/) | Bind mounts, container networking, host and overlay networks |
+| 8 | [08-kubernetes-fundamentals](08-kubernetes-fundamentals/) | Cluster architecture, Minikube setup, kubectl basics, and namespaces |
+| 9 | [09-kubernetes-pods-replicasets-deployments](09-kubernetes-pods-replicasets-deployments/) | Pods, ReplicaSets, and Deployments with rolling update and rollback |
+| 10 | [10-kubernetes-networking-services](10-kubernetes-networking-services/) | ClusterIP, NodePort, LoadBalancer, ExternalName, and headless Services |
+| 11 | [11-kubernetes-ingress-configmaps-secrets](11-kubernetes-ingress-configmaps-secrets/) | Ingress routing with ConfigMaps and Secrets |
+
+## ToKnow
+
+- Screenshots are named `<topic>_24bcs10326.png` and live beside the task they document.
 
 ## How this repo was completed
 
@@ -36,6 +44,16 @@ in the READMEs / `EVIDENCE.md` files:
   soft/hard links (with the symlink correctly breaking), `adduser` created a real
   user, `journalctl` returned real logs. See
   [`EVIDENCE.md`](02-linux/EVIDENCE.md).
+- **08 Kubernetes Fundamentals** — Minikube cluster setup, kubectl basics, namespaces.
+  See [`README.md`](08-kubernetes-fundamentals/README.md).
+- **09 Kubernetes Pods/ReplicaSets/Deployments** — Pod creation, ReplicaSet self-healing,
+  Deployment rolling updates and rollbacks.
+  See [`README.md`](09-kubernetes-pods-replicasets-deployments/README.md).
+- **10 Kubernetes Networking/Services** — ClusterIP, NodePort, LoadBalancer,
+  ExternalName, and headless Services.
+  See [`README.md`](10-kubernetes-networking-services/README.md).
+- **11 Kubernetes Ingress/ConfigMaps/Secrets** — Ingress routing with ConfigMaps and Secrets.
+  See [`README.md`](11-kubernetes-ingress-configmaps-secrets/README.md).
 
 > The `EVIDENCE.md` files contain the verbatim terminal output. For image-style
 > screenshots (browser windows), open the running apps at the ports listed and

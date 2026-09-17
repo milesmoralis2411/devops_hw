@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: yatri-dev
+  labels:
+    app: web
+    lab: kubernetes-fundamentals
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        lab: kubernetes-fundamentals
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          # Serve a namespace-specific page so the two environments are
+          # distinguishable in a DNS test.
+          command:
+            - /bin/sh
+            - -c
+            - echo 'Hello from yatri-dev' > /usr/share/nginx/html/index.html && exec nginx -g 'daemon off;'
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  namespace: yatri-dev
+  labels:
+    app: web
+    lab: kubernetes-fundamentals
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
