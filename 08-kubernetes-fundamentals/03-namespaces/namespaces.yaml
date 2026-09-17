@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yatri-dev
+  labels:
+    environment: dev
+    lab: kubernetes-fundamentals
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yatri-prod
+  labels:
+    environment: prod
+    lab: kubernetes-fundamentals

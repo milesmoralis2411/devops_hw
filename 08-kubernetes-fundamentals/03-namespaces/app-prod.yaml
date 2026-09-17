@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # The same object name as the Deployment in yatri-dev. Names only have to be
+  # unique inside one namespace, so both can exist at once.
+  name: web
+  namespace: yatri-prod
+  labels:
+    app: web
+    lab: kubernetes-fundamentals
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        lab: kubernetes-fundamentals
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          command:
+            - /bin/sh
+            - -c
+            - echo 'Hello from yatri-prod' > /usr/share/nginx/html/index.html && exec nginx -g 'daemon off;'
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+  namespace: yatri-prod
+  labels:
+    app: web
+    lab: kubernetes-fundamentals
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
