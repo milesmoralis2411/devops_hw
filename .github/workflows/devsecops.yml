@@ -99,7 +99,7 @@ jobs:
           npm audit --audit-level=high || echo "::warning::npm audit found issues"
 
       - name: Trivy filesystem scan (dependencies + config)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0 (Trivy 0.70.0), pinned to a commit
         with:
           scan-type: fs
           scan-ref: ${{ env.APP_DIR }}
@@ -166,7 +166,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Trivy image scan (SARIF for the Security tab)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0 (Trivy 0.70.0), pinned to a commit
         with:
           image-ref: yatri-secure:${{ github.sha }}
           format: sarif
@@ -181,7 +181,7 @@ jobs:
           category: trivy-image
 
       - name: Trivy image scan (JSON, for counting)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0 (Trivy 0.70.0), pinned to a commit
         with:
           image-ref: yatri-secure:${{ github.sha }}
           format: json

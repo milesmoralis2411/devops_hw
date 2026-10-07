@@ -291,9 +291,20 @@ The first whole-project scan reported **12 HIGH/CRITICAL** misconfigurations
 | KSV014 ×6: writable root filesystem | Prometheus, Alertmanager, alert-log, Grafana, kube-state-metrics, Gitea | **Fixed** — `readOnlyRootFilesystem: true` + `emptyDir` where they write |
 | KSV041 (CRITICAL): kube-state-metrics can read Secrets | `monitoring/` | **Fixed** — `secrets` removed from its ClusterRole and from `--resources` |
 | KSV047: Prometheus uses `nodes/proxy` | `monitoring/` | **Accepted** — required to scrape cAdvisor; documented with owner and review date in [`.trivyignore`](security/.trivyignore) |
+| KSV-0118 ×5: no pod-level `securityContext` (found later, see below) | Prometheus, Alertmanager, alert-log, Grafana, kube-state-metrics | **Fixed** — each Pod runs as its image's non-root user with `fsGroup` and `RuntimeDefault` seccomp; alert-log moved to port 8080 |
 
 After the fixes the scan exits 0, and the pipeline now gates on the whole
 project rather than on the application folder alone.
+
+**The scanner got stricter after the push.** The first GitHub Actions run
+failed: `aquasecurity/trivy-action@0.28.0` no longer resolves (the upstream
+tags were re-published with a `v` prefix), and the current release runs Trivy
+0.70.0 instead of the 0.57.1 used locally. Its newer check KSV-0118 flagged the
+five monitoring Deployments. The workflows now pin the action to a commit SHA
+(v0.36.0), so a re-tagged release cannot change what runs. The fix went out
+the GitOps way — one commit to the platform repo, which Argo CD rolled out —
+and was verified in the cluster: all targets up, and a test alert reached
+alert-log on its new port ([EVIDENCE.md §10](EVIDENCE.md)).
 
 The image scan also found **10 HIGH** CVEs that came with the base image —
 inside npm, which the runtime never uses. The runtime stage now deletes npm,

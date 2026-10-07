@@ -712,3 +712,125 @@ Providers required by configuration:
 └── provider[registry.terraform.io/hashicorp/aws] ~> 5.0
 
 ```
+
+## 10. Trivy 0.70.0 - new check KSV-0118, fixed and rolled out through GitOps
+
+GitHub Actions now runs trivy-action v0.36.0, which installs Trivy 0.70.0.
+Its newer check KSV-0118 flagged the monitoring Deployments: they hardened
+each container but set no pod-level securityContext.
+
+```text
+$ trivy --version
+Version: 0.70.0
+
+# before - the pushed commit
+$ trivy fs --config security/trivy.yaml --ignorefile security/.trivyignore --exit-code 1 .
+  exit code: 1
+  KSV-0118 HIGH  monitoring/alertmanager.yaml         Default security context configured
+  KSV-0118 HIGH  monitoring/alertmanager.yaml         Default security context configured
+  KSV-0118 HIGH  monitoring/grafana.yaml              Default security context configured
+  KSV-0118 HIGH  monitoring/kube-state-metrics.yaml   Default security context configured
+  KSV-0118 HIGH  monitoring/prometheus.yaml           Default security context configured
+  findings (HIGH/CRITICAL): 5
+```
+
+Fix: a pod-level securityContext on every monitoring Deployment - run as the
+image's own non-root user, fsGroup for the emptyDir volumes, RuntimeDefault
+seccomp. The alert-log nginx now runs as uid 101 and listens on 8080; its
+Service still exposes port 80, so the Alertmanager webhook URL is unchanged.
+
+```text
+$ git -C "<platform-repo>" diff --stat
+ monitoring/alertmanager.yaml       | 18 +++++++++++++++---
+ monitoring/grafana.yaml            |  6 ++++++
+ monitoring/kube-state-metrics.yaml |  6 ++++++
+ monitoring/prometheus.yaml         |  6 ++++++
+ 4 files changed, 33 insertions(+), 3 deletions(-)
+
+$ git -C "<platform-repo>" diff -- monitoring/prometheus.yaml | grep -E '^[-+] ' | tr -d '\r'
++      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
++        runAsNonRoot: true
++        runAsUser: 65534
++        runAsGroup: 65534
++        fsGroup: 65534               # emptyDir volumes are writable by this group
++        seccompProfile: { type: RuntimeDefault }
+
+$ git -C "<platform-repo>" log --oneline -1
+4097b57 harden: pod-level securityContext for monitoring (Trivy KSV-0118)
+
+$ kubectl -n argocd get application yatri-monitoring -o jsonpath='{.status.sync.revision}{" sync="}{.status.sync.status}{" health="}{.status.health.status}{"\n"}'
+4097b57515164f868cfbc8a2c76679c8ad72f3f0 sync=Synced health=Progressing
+
+Waiting for deployment "prometheus" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "prometheus" rollout to finish: 1 old replicas are pending termination...
+deployment "prometheus" successfully rolled out
+Waiting for deployment "alertmanager" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "alertmanager" rollout to finish: 1 old replicas are pending termination...
+deployment "alertmanager" successfully rolled out
+deployment "alert-log" successfully rolled out
+Waiting for deployment "grafana" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "grafana" rollout to finish: 1 old replicas are pending termination...
+deployment "grafana" successfully rolled out
+deployment "kube-state-metrics" successfully rolled out
+
+$ kubectl -n monitoring get pods
+NAME                                  READY   STATUS        RESTARTS   AGE
+alert-log-7c775bb858-zwt7x            1/1     Running       0          26s
+alertmanager-976c945f9-mv86p          1/1     Running       0          26s
+grafana-5579f67ccc-79qtb              1/1     Terminating   0          33m
+grafana-7cf577f7c4-z6trk              1/1     Running       0          26s
+kube-state-metrics-6c4c9c46d6-q724k   1/1     Running       0          26s
+prometheus-6c844c799f-mg9cq           1/1     Running       0          26s
+
+$ # pod-level securityContext now running in the cluster
+  prometheus: {"fsGroup":65534,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}}
+  alertmanager: {"fsGroup":65534,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}}
+  alert-log: {"fsGroup":101,"runAsGroup":101,"runAsNonRoot":true,"runAsUser":101,"seccompProfile":{"type":"RuntimeDefault"}}
+  grafana: {"fsGroup":472,"runAsGroup":472,"runAsNonRoot":true,"runAsUser":472,"seccompProfile":{"type":"RuntimeDefault"}}
+  kube-state-metrics: {"fsGroup":65534,"runAsGroup":65534,"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}}
+
+$ kubectl -n monitoring exec deploy/prometheus -- id
+uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
+
+$ kubectl -n monitoring exec deploy/grafana -- id
+uid=472(grafana) gid=472 groups=0(root),472
+
+$ kubectl -n monitoring exec deploy/alert-log -- id
+uid=101(nginx) gid=101(nginx) groups=101(nginx)
+
+```
+
+Everything still works - targets, dashboards, and the alert path end to end:
+
+```text
+$ curl prometheus:9090/api/v1/targets   (summarised)
+  kube-state-metrics   up
+  kubernetes-cadvisor  up
+  kubernetes-kubelet   up
+  kubernetes-pods      up
+  kubernetes-pods      up
+  prometheus           up
+
+$ kubectl -n monitoring exec deploy/grafana -- wget -qO- http://localhost:3000/api/health | tr -d '\n '
+{"database":"ok","version":"11.3.0","commit":"d9455ff7db73b694db7d412e49a68bec767f2b5a"}
+
+$ # send a test alert to Alertmanager; it must reach alert-log on its new port
+$ curl -X POST alertmanager:9093/api/v2/alerts -d '[{"labels":{"alertname":"GitOpsHardeningCheck","severity":"warning"}}]'
+ (accepted)
+
+$ kubectl -n monitoring logs deploy/alert-log --tail=50 | grep -o '"status":"[a-z]*","labels":{"alertname":"GitOpsHardeningCheck"[^}]*' | tail -1
+"status":"firing","labels":{"alertname":"GitOpsHardeningCheck","severity":"warning","team":"platform"
+
+```
+
+The same scan as CI, after the fix:
+
+```text
+$ trivy fs --config security/trivy.yaml --ignorefile security/.trivyignore --exit-code 1 .
+  exit code: 0
+  findings (HIGH/CRITICAL): 0
+
+yatri-root: sync=Synced health=Healthy
+yatri-monitoring: sync=Synced health=Healthy
+yatri-trips: sync=Synced health=Healthy
+```

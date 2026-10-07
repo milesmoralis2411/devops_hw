@@ -4,3 +4,9 @@
 # Session 12 lab Secret (throwaway demo password, never used outside minikube).
 # Reported as Finding 1 in 16-cicd-devsecops/README.md. Baselined 2026-10-07.
 47f0f69a5754627d645a2a15e20cef6a33331028:11-kubernetes-ingress-configmaps-secrets/full-demo/secret.yaml:generic-api-key:14
+
+# Reviewed false positives from the sessions 10-21 commit, baselined 2026-10-07:
+# - Session 13 mini-project Secret; the value is literally "demo-token-not-a-real-secret".
+13c0ae9fdfefb956e7f25f81d16d611d9ec95f61:12-kubernetes-storage-hpa-probes/04-mini-project/02-config.yaml:kubernetes-secret-yaml:6
+# - S21 evidence: curl sending the deliberately wrong key "wrong-key" to show HTTP 401.
+13c0ae9fdfefb956e7f25f81d16d611d9ec95f61:20-final-devops-project/EVIDENCE.md:curl-auth-header:541

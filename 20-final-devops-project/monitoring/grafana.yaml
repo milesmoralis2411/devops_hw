@@ -380,6 +380,12 @@ spec:
     metadata:
       labels: { app: grafana }
     spec:
+      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472               # emptyDir volumes are writable by this group
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: grafana
           image: grafana/grafana:11.3.0

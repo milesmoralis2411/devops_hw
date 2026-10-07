@@ -16,6 +16,12 @@ spec:
     metadata:
       labels: { app: alertmanager }
     spec:
+      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534               # emptyDir volumes are writable by this group
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: alertmanager
           image: prom/alertmanager:v0.27.0
@@ -60,7 +66,7 @@ data:
     # request is proxied to a second local server that just answers 200.
     log_format alert escape=none '$time_iso8601 $request_body';
     server {
-      listen 80;
+      listen 8080;                  # unprivileged port: nginx runs as uid 101
       location / {
         access_log /dev/stdout alert;
         proxy_pass http://127.0.0.1:8081;
@@ -86,6 +92,12 @@ spec:
     metadata:
       labels: { app: alert-log }
     spec:
+      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101               # emptyDir volumes are writable by this group
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: nginx
           image: nginx:1.25-alpine
@@ -93,7 +105,7 @@ spec:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           resources:
             requests: { cpu: 5m, memory: 16Mi }
             limits:   { cpu: 50m, memory: 64Mi }
@@ -118,4 +130,4 @@ spec:
   selector: { app: alert-log }
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080

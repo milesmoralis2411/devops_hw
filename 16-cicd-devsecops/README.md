@@ -127,6 +127,19 @@ $ gitleaks detect --source . --redact      # full history, with .gitleaksignore
 INF no leaks found                          exit=0
 ```
 
+Once sessions 10–21 were committed, the scan found two more matches. Both
+are deliberate lab values, so they were baselined the same way:
+
+| Match | Why it is not a leak |
+| --- | --- |
+| `kubernetes-secret-yaml` in the Session 13 mini-project Secret | The value is literally `demo-token-not-a-real-secret` |
+| `curl-auth-header` in the Session 21 evidence | A request sent with `x-api-key: wrong-key` on purpose, to show the HTTP 401 |
+
+**CI note.** The pipeline pins `aquasecurity/trivy-action` to a commit SHA
+(v0.36.0). The tag it first used, `0.28.0`, stopped resolving after upstream
+re-published its tags with a `v` prefix. A pinned commit cannot be moved, so
+the scanner that runs in CI cannot change under the pipeline.
+
 ### Finding 2 — vulnerabilities that came with the base image
 
 ```text

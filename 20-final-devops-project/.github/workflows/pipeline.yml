@@ -78,7 +78,7 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}/application
         run: npm install --package-lock-only --no-audit --no-fund && npm audit --audit-level=high
       - name: Trivy - dependencies, secrets and misconfigurations (Dockerfile, Helm, Terraform)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0 (Trivy 0.70.0), pinned to a commit
         env:
           TRIVY_SKIP_CHECK_UPDATE: "true"   # use the checks embedded in the pinned scanner version
         with:
@@ -128,7 +128,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25  # v0.36.0 (Trivy 0.70.0), pinned to a commit
         with:
           image-ref: ${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
           format: json

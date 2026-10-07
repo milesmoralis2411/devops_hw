@@ -68,6 +68,12 @@ spec:
     metadata:
       labels: { app: kube-state-metrics }
     spec:
+      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534               # emptyDir volumes are writable by this group
+        seccompProfile: { type: RuntimeDefault }
       serviceAccountName: kube-state-metrics
       # no secrets in the ClusterRole, so tell KSM not to try listing them
       containers:

@@ -52,6 +52,12 @@ spec:
         # /-/reload endpoint (--web.enable-lifecycle) in the GitOps flow
         kubectl.kubernetes.io/default-container: prometheus
     spec:
+      securityContext:            # pod level: never root, default seccomp (Trivy KSV-0118)
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534               # emptyDir volumes are writable by this group
+        seccompProfile: { type: RuntimeDefault }
       serviceAccountName: prometheus
       containers:
         - name: prometheus
