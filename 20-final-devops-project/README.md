@@ -529,9 +529,9 @@ post-incident alert, the game day, and the hardening commit.
 
 ![Gitea commit history](screenshots/gitea-platform-history_24bcs10326.png)
 
-**GitHub Actions** — the pipeline on the monorepo ([run #2](https://github.com/milesmoralis2411/devops_hw/actions/runs/37663251908)):
-test → SAST / SCA / secret scan → build + image scan + gate pass. *Push to
-ECR* and *GitOps deploy* are skipped until `AWS_CI_ROLE_ARN` is set
+**GitHub Actions** — the pipeline on the monorepo ([run #5](https://github.com/milesmoralis2411/devops_hw/actions/runs/37681550405)):
+test → SAST / SCA / secret scan → build + image scan + gate → **push to GHCR**, all
+green. *Push to ECR* and *GitOps deploy* are skipped until `AWS_CI_ROLE_ARN` is set
 ([section 9](#9-cicd-pipeline)).
 
 ![GitHub Actions pipeline](screenshots/github-actions-pipeline_24bcs10326.png)
