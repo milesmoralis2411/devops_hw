@@ -231,12 +231,12 @@ one at a time:
 config-demo   0/1   ContainerCreating
   FailedMount  configmap "extra-settings" not found              <- error 1 surfaces first
 
-![09 - Configuration errors](screenshots/issue-09-configuration-errors_24bcs10326.png)
-
 # after the missing ConfigMap exists, the next error appears:
 config-demo   0/1   CreateContainerConfigError
   Failed       couldn't find key logLevel in ConfigMap default/app-settings   <- error 2
 ```
+
+![09 - Configuration errors](screenshots/issue-09-configuration-errors_24bcs10326.png)
 
 The third (`/usr/local/bin/myapp` does not exist in the image) would only
 appear after fixing the second. **Fix:** correct key `log_level`, create

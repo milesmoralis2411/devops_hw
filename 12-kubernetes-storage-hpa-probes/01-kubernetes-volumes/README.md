@@ -189,10 +189,10 @@ exclusive and one-to-one — a second PVC cannot bind the same PV.
 
 ```bash
 kubectl get pv,pvc
-
-![Static PV + PVC: data survives a new Pod](screenshots/vol-persistentvolume-persistentvolumeclaim-static_24bcs10326.png)
 # STATUS: Available -> Bound -> Released
 ```
+
+![Static PV + PVC: data survives a new Pod](screenshots/vol-persistentvolume-persistentvolumeclaim-static_24bcs10326.png)
 
 A PVC stuck in `Pending` means either no PV matches, or the StorageClass has
 no provisioner. `kubectl describe pvc` says which.

@@ -147,6 +147,33 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: image, path: image.tar.gz, retention-days: 1 }
 
+  push-ghcr:
+    name: Push to GHCR
+    runs-on: ubuntu-latest
+    needs: build
+    # Always publishes the scanned image to GitHub Container Registry - no cloud
+    # account needed. The ECR job below is the production registry.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: image }
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push the exact image that passed the gate
+        run: |
+          gunzip -c image.tar.gz | docker load
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REMOTE=ghcr.io/${OWNER}/${IMAGE_NAME}:${{ needs.build.outputs.tag }}
+          docker tag ${IMAGE_NAME}:${{ needs.build.outputs.tag }} "$REMOTE"
+          docker push "$REMOTE"
+          echo "### Pushed \`$REMOTE\`" >> "$GITHUB_STEP_SUMMARY"
+
   push:
     name: Push to ECR
     runs-on: ubuntu-latest

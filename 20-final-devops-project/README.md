@@ -147,7 +147,8 @@ Engineering choices that matter for operations:
   write takes an exclusive **lock file** (`O_EXCL`), re-reads, and writes
   atomically (temp file + `rename`). A test runs four separate processes
   writing concurrently and asserts that none of the 100 trips is lost. With
-  locking disabled, the same test fails.
+  locking disabled (checked on 2026-10-08 in `node:22-alpine`), the same test
+  kept only 30, 37 and 65 of the 100 trips in three runs; with locking, 100 every time.
 - **Constant-time API-key comparison** (`crypto.timingSafeEqual`).
 - **Structured JSON logs**, one object per line, and never the key itself.
 - **Graceful shutdown** on `SIGTERM`, so rolling updates do not drop requests.
@@ -242,7 +243,18 @@ edition, which has no EKS or ECR; output in [EVIDENCE.md §11](EVIDENCE.md)):
 docker run -d --name localstack -p 4566:4566 localstack/localstack:3.8
 cd terraform/aws && cp localstack_override.tf.example override.tf
 terraform init && terraform plan                     # Plan: 34 to add
-terraform apply -target=random_id.suffix -target=aws_vpc.this   -target=aws_subnet.public -target=aws_subnet.private -target=aws_internet_gateway.this   -target=aws_eip.nat -target=aws_nat_gateway.this -target=aws_route_table.public   -target=aws_route_table.private -target=aws_route_table_association.public   -target=aws_route_table_association.private -target=aws_kms_key.eks -target=aws_kms_key.backups   -target=aws_s3_bucket.backups -target=aws_s3_bucket_versioning.backups   -target=aws_s3_bucket_server_side_encryption_configuration.backups   -target=aws_s3_bucket_public_access_block.backups -target=aws_iam_openid_connect_provider.github   -target=aws_iam_role.github_ci -target=aws_iam_role.cluster -target=aws_iam_role.node   -target=aws_iam_role_policy_attachment.cluster -target=aws_iam_role_policy_attachment.node
+terraform apply -target=random_id.suffix -target=aws_vpc.this -target=aws_subnet.public \
+  -target=aws_subnet.private -target=aws_internet_gateway.this -target=aws_eip.nat \
+  -target=aws_nat_gateway.this -target=aws_route_table.public \
+  -target=aws_route_table.private -target=aws_route_table_association.public \
+  -target=aws_route_table_association.private -target=aws_kms_key.eks \
+  -target=aws_kms_key.backups -target=aws_s3_bucket.backups \
+  -target=aws_s3_bucket_versioning.backups \
+  -target=aws_s3_bucket_server_side_encryption_configuration.backups \
+  -target=aws_s3_bucket_public_access_block.backups \
+  -target=aws_iam_openid_connect_provider.github -target=aws_iam_role.github_ci \
+  -target=aws_iam_role.cluster -target=aws_iam_role.node \
+  -target=aws_iam_role_policy_attachment.cluster -target=aws_iam_role_policy_attachment.node
 terraform destroy && rm override.tf                  # back to real AWS
 ```
 
@@ -278,13 +290,14 @@ with paths prefixed.
 | `sca` | `npm audit --audit-level=high`; Trivy `fs` over app + Dockerfile + Helm + Terraform | Dependency CVEs **and** IaC misconfigurations |
 | `secret-scan` | Gitleaks over full history | Project config with a custom API-key rule; the one reviewed lab finding is baselined in the root [`.gitleaksignore`](../.gitleaksignore) |
 | `build` | Buildx build (tests run again inside), Trivy image scan, **security gate**, save image | Tag `1.0.<run>-<sha7>` |
+| `push-ghcr` | Pushes **the scanned artifact** to GitHub Container Registry, `ghcr.io/<owner>/yatri-trips:<tag>` | Runs on every push to `main`; uses the workflow's own `GITHUB_TOKEN`, so no cloud account is needed |
 | `push` | Pushes **the scanned artifact** to ECR | OIDC role from `terraform/aws`; `environment: production` approval |
 | `gitops-deploy` | Rewrites `image.tag` in `values-prod.yaml`, commits, pushes | No `kubectl` — Argo CD deploys |
 
-`push` and `gitops-deploy` run only when the repository variable
+`push` (ECR) and `gitops-deploy` run only when the repository variable
 `AWS_CI_ROLE_ARN` is set to the role ARN output by `terraform/aws`. Without an
-AWS account the jobs are **skipped**, not failed, so every run still proves
-test → scan → gate. The lab equivalent of these two stages is
+AWS account those two jobs are **skipped**, not failed. Every run still goes
+test → scan → gate → **image pushed to GHCR**. The lab equivalent of these two stages is
 [`scripts/pipeline.sh`](scripts/pipeline.sh), which pushes to the local
 registry and commits the tag that Argo CD deploys.
 

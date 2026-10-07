@@ -16,8 +16,6 @@ result. Run these on any machine with Docker installed.
 backend attached to 2 networks, and verify connectivity.
 
 ```bash
-
-![Task 1: connectivity between the frontend, backend and database containers](screenshots/task1-connectivity.png)
 # 1. Create 3 user-defined bridge networks
 docker network create frontend-net
 docker network create backend-net
@@ -39,6 +37,8 @@ docker network connect frontend-net backend
 docker network connect database-net backend
 ```
 
+![Task 1: connectivity between the frontend, backend and database containers](screenshots/task1-connectivity.png)
+
 **Check connectivity** (Docker's embedded DNS resolves containers by name on a
 shared network):
 
@@ -53,10 +53,13 @@ docker exec backend ping -c 2 database
 docker exec frontend ping -c 2 database   # expected: bad address / unreachable
 ```
 
-**Expected outcome:**
+**Result** (re-verified on 2026-10-08 on the same three containers):
 - `backend -> frontend`  ✅ succeeds (both on `frontend-net`)
 - `backend -> database`  ✅ succeeds (both on `database-net`)
-- `frontend -> database` ❌ fails (no shared network) — this proves network isolation.
+- `frontend -> database` ❌ fails with `ping: bad address 'database'`: they share no
+  network, so Docker's DNS does not even resolve the name. This proves network isolation.
+
+![Task 1 re-verified: network membership, both backend pings succeed, frontend to database fails](screenshots/s08-task-1-three-tiers-three-networks-backend-on-two_24bcs10326.png)
 
 Inspect a network to confirm which containers are attached:
 
@@ -103,32 +106,35 @@ and `netstat` shows it listening on `:::80` in the host's own network stack.
 container restart.
 
 ```bash
-
-![Task 3: bind-mounted index.html served by Nginx, change visible without a restart](screenshots/task3-bind-mount.png)
-# 1. Create a local folder + index.html
-mkdir -p ~/nginx-site
-echo "Hello students" > ~/nginx-site/index.html
+# 1. A local folder + index.html (nginx-site/ in this directory)
+mkdir -p nginx-site
+echo "Hello students" > nginx-site/index.html
 
 # 2. Bind mount that folder into Nginx's web root
 docker run -d --name nginx-bind \
-  -p 8080:80 \
-  -v ~/nginx-site:/usr/share/nginx/html \
+  -p 8090:80 \
+  -v "$(pwd)/nginx-site:/usr/share/nginx/html" \
   nginx:alpine
 
 # 3. Access the site
-curl http://localhost:8080          # -> Hello students
+curl http://localhost:8090          # -> Hello students
 
 # 4. Modify the file ON THE HOST (no restart)
-echo "Hello students - updated live!" > ~/nginx-site/index.html
+echo "Hello students - updated live without restart!" > nginx-site/index.html
 
 # 5. Access again -> change is reflected immediately
-curl http://localhost:8080          # -> Hello students - updated live!
+curl http://localhost:8090          # -> Hello students - updated live without restart!
 ```
 
-**Expected outcome:** The second `curl` shows the updated text **without**
-restarting or rebuilding the container. A bind mount maps the host directory
-straight into the container, so file changes are visible instantly in both
-directions.
+![Task 3: bind-mounted index.html served by Nginx, change visible without a restart](screenshots/task3-bind-mount.png)
+
+**Result:** the second `curl` shows the updated text **without** restarting or
+rebuilding the container. A bind mount maps the host directory straight into the
+container, so file changes are visible instantly in both directions. Re-verified
+on 2026-10-08 on the same `nginx-bind` container: `startedAt` is unchanged after
+the edit and `restarts=0`.
+
+![Task 3 re-verified: bind mount source, live edit, container never restarted](screenshots/s08-task-3-bind-mount-edited-live-without-a-restart_24bcs10326.png)
 
 ---
 

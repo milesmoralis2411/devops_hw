@@ -72,8 +72,6 @@ kubectl patch svc bg-web -p '{"spec":{"selector":{"app":"bg-web","version":"gree
 **Observed:**
 
 ```text
-
-![Blue-green: switch the Service selector](screenshots/strategy-2-blue-green_24bcs10326.png)
 # BEFORE the switch
 VERSION=BLUE v1.0 pod=web-blue-8b6b9f787-l49px
 VERSION=BLUE v1.0 pod=web-blue-8b6b9f787-9x2z9
@@ -83,6 +81,8 @@ VERSION=GREEN v2.0 pod=web-green-85bff8bc76-vl288
 VERSION=GREEN v2.0 pod=web-green-85bff8bc76-7rwkt
 VERSION=GREEN v2.0 pod=web-green-85bff8bc76-q59lh
 ```
+
+![Blue-green: switch the Service selector](screenshots/strategy-2-blue-green_24bcs10326.png)
 
 Patching the selector back to `blue` restored v1.0 instantly — that is the
 rollback, and it takes the same few milliseconds.
@@ -101,8 +101,6 @@ same Service.
 **Observed** — 100 requests, counted:
 
 ```text
-
-![Canary: 15/85 split, then promotion](screenshots/strategy-3-canary_24bcs10326.png)
 # 1 canary : 4 stable replicas  (expected ~20% canary)
      18 CANARY v2.0
      82 STABLE v1.0
@@ -111,6 +109,8 @@ same Service.
      82 CANARY v2.0
      18 STABLE v1.0
 ```
+
+![Canary: 15/85 split, then promotion](screenshots/strategy-3-canary_24bcs10326.png)
 
 **Why it matters:** only a small fraction of users is exposed to the new
 version while it is watched for errors. If it misbehaves, scale the canary to

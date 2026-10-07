@@ -48,13 +48,13 @@ ts-missing-configmap-fixed   1/1     Running   0     1s
 $ kubectl logs ts-missing-configmap-fixed
 APP_ENV=production
 
-> **Screenshots:** live output from a second run of the same cases on 2026-10-07, so Pod names and ages differ from [EVIDENCE.md](EVIDENCE.md).
-
-![Case 01 before / fix / after](screenshots/ts-case-01-pod-references-a-missing-configmap_24bcs10326.png)
-
 # and the ORIGINAL Pod recovered on its own, with no restart needed:
 ts-missing-configmap         1/1     Running   0     28s
 ```
+
+> **Screenshots:** live output from a second run of the same cases on 2026-10-07, so Pod names and ages differ from [EVIDENCE.md](EVIDENCE.md).
+
+![Case 01 before / fix / after](screenshots/ts-case-01-pod-references-a-missing-configmap_24bcs10326.png)
 
 The kubelet keeps retrying, so once the reference resolves the stuck Pod
 starts by itself.

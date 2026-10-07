@@ -9,7 +9,28 @@ CLI, and namespaces.
 | kubectl basics | `02-kubectl-basics/hello-pod.yaml` | Inspecting, debugging, and reaching a Pod from the CLI |
 | Namespaces | `03-namespaces/` | Isolating environments and resolving Services across them |
 
-The commands for every task are in [running.md](running.md).
+The commands for every task are in [running.md](running.md), and the raw output of
+the Minikube and tutorial runs is in [EVIDENCE.md](EVIDENCE.md).
+
+## Minikube — install, configure, verify
+
+Minikube v1.39.0 runs a single-node cluster inside Docker Desktop. It was installed
+from the release binary (`winget install Kubernetes.minikube` does the same) and
+started with:
+
+```bash
+minikube start --driver=docker --container-runtime=containerd \
+  --kubernetes-version=v1.37.0 --cpus=2 --memory=4096
+minikube addons enable metrics-server
+```
+
+![Minikube installed and configured: version, profile, start settings, add-ons, ingress controller](screenshots/k8s-1-minikube-installed-and-configured_24bcs10326.png)
+
+The cluster checks out at every level: `minikube status` (host, kubelet,
+API server), the node is `Ready`, the API server's own `/readyz` checks pass, and
+every control-plane component is running as a Pod in `kube-system`.
+
+![Cluster status: minikube status, cluster-info, node, readyz, kube-system Pods](screenshots/k8s-2-verify-the-cluster-status_24bcs10326.png)
 
 ## Cluster Architecture
 
@@ -149,6 +170,29 @@ curl web-service.yatri-prod.svc.cluster.local     -> Hello from yatri-prod
 
 ![Cross-namespace DNS responses](03-namespaces/namespace-dns_24bcs10326.png)
 
+
+## Kubernetes Basics tutorial (hands-on)
+
+The official [Kubernetes Basics](https://kubernetes.io/docs/tutorials/kubernetes-basics/)
+modules, run on this cluster with the tutorial's own images, executed 2026-10-08:
+
+| Module | What happened |
+| --- | --- |
+| Deploy an app | `kubectl create deployment kubernetes-bootcamp` → 1/1 ready |
+| Explore the app | `get`, `describe`, `logs`, `exec`: the app answers `Hello Kubernetes bootcamp! … v=1` from inside the Pod |
+| Expose the app | A NodePort Service makes it reachable on the node. Labels select Pods (`version=v1`). Deleting the Service cuts outside access while the app keeps running |
+| Scale the app | 4 replicas; 8 requests through the Service land on different Pods; scaled back to 2 |
+| Update the app | Rolling update to v2 (answers `v=2`). A bad `v10` tag → `ImagePullBackOff` while v2 keeps serving; `kubectl rollout undo` returns to v2 |
+
+![Deploy an app](screenshots/k8s-basics-1-deploy-an-app_24bcs10326.png)
+
+![Explore the app: Pods, describe, logs, exec](screenshots/k8s-basics-2-explore-the-app-pods-and-nodes_24bcs10326.png)
+
+![Expose the app with a Service, and use labels](screenshots/k8s-basics-3-expose-the-app-with-a-service-and-use-l_24bcs10326.png)
+
+![Scale the app: requests spread across the replicas](screenshots/k8s-basics-4-scale-the-app_24bcs10326.png)
+
+![Update the app, then roll back a bad update](screenshots/k8s-basics-5-update-the-app-then-roll-back-a-bad-upd_24bcs10326.png)
 
 ## Takeaway
 

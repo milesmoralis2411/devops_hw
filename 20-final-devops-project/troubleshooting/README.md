@@ -196,17 +196,17 @@ It was committed (`a980d81`); Prometheus rolled automatically, and
 (`fe5a5af`):
 
 ```text
+# 164s after Prometheus restarted with the broken config:
+Prometheus:    MonitoringTargetDown   critical   firing   Prometheus cannot scrape job kube-state-metrics ...
+Alertmanager:  MonitoringTargetDown   active     receivers=['alert-log']
+Receiver:      "status":"firing","labels":{"alertname":"MonitoringTargetDown","job":"kube-state-metrics","severity":"critical","team":"platform"...
+```
 
 ![Post-incident action 1 - alert on the monitoring itself](screenshots/incident-post-incident-action-1-alert-on-the-monitoring-i_24bcs10326.png)
 
 ![Post-incident action 2 - game day: break the scrape target on purpose, confirm it pages](screenshots/incident-post-incident-action-2-game-day-break-the-scrape_24bcs10326.png)
 
 ![Post-incident action 3 - revert the game-day break](screenshots/incident-post-incident-action-3-revert-the-game-day-break_24bcs10326.png)
-# 164s after Prometheus restarted with the broken config:
-Prometheus:    MonitoringTargetDown   critical   firing   Prometheus cannot scrape job kube-state-metrics ...
-Alertmanager:  MonitoringTargetDown   active     receivers=['alert-log']
-Receiver:      "status":"firing","labels":{"alertname":"MonitoringTargetDown","job":"kube-state-metrics","severity":"critical","team":"platform"...
-```
 
 **3. Revert** (`e9a7d85`) → all 6 targets `up`, no active alerts, every
 Application Synced/Healthy.

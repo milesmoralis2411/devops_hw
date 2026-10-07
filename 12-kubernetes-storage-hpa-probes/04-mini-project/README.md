@@ -36,6 +36,15 @@ writes `index.html` if it is not already on the volume:
 $ kubectl logs <first pod> -c seed-content
 seeded fresh content
 
+# edit the page live, then replace every Pod with a rollout restart
+$ kubectl logs <new pod> -c seed-content
+content already present, leaving it alone
+
+$ kubectl exec <new pod> -c web -- cat /usr/share/nginx/html/index.html
+<h1>Resilient Notes</h1><p>env: production</p><p>seeded: Wed Oct  7 16:01:17 UTC 2026</p>
+<p>edited live at Wed Oct  7 16:01:23 UTC 2026</p>
+```
+
 > **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text.
 
 ![Deploy the mini project](screenshots/mini-deploy-the-mini-project_24bcs10326.png)
@@ -49,15 +58,6 @@ seeded fresh content
 ![Probes: break /healthz and watch Kubernetes react](screenshots/mini-probes-break-healthz-and-watch-kubernetes-react_24bcs10326.png)
 
 ![HPA: generate load](screenshots/mini-hpa-generate-load_24bcs10326.png)
-
-# edit the page live, then replace every Pod with a rollout restart
-$ kubectl logs <new pod> -c seed-content
-content already present, leaving it alone
-
-$ kubectl exec <new pod> -c web -- cat /usr/share/nginx/html/index.html
-<h1>Resilient Notes</h1><p>env: production</p><p>seeded: Wed Oct  7 16:01:17 UTC 2026</p>
-<p>edited live at Wed Oct  7 16:01:23 UTC 2026</p>
-```
 
 New Pods, same PVC, and the live edit was still there.
 

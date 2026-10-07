@@ -65,10 +65,10 @@ curl http://localhost:8081        # -> Hello World from Apache HTTP Server!
 cd React-app
 docker build -t hello-react .     # multi-stage: npm build -> nginx
 docker run -d -p 8082:80 --name hello-react hello-react
-
-![React Hello World on :8082](screenshots/react-app.png)
 # open http://localhost:8082      -> Hello World from React!
 ```
+
+![React Hello World on :8082](screenshots/react-app.png)
 
 ### nginx-app
 ```bash
