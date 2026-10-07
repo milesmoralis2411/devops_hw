@@ -1,0 +1,11 @@
+# A second common cause: endpoints exist, but targetPort points at a port
+# nothing is listening on. Connection refused rather than timeout.
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-demo-wrongport
+spec:
+  selector: { app: web-app }
+  ports:
+    - port: 80
+      targetPort: 8080        # nginx listens on 80, not 8080

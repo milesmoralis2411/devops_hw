@@ -1,0 +1,8 @@
+# CVEs explicitly accepted, each with a reason and a review date.
+# An empty file is the goal; every line here is technical debt.
+#
+# Format:  CVE-ID    # reason, owner, review-by
+#
+# Example:
+# CVE-2023-45853    # zlib in the base image, not reachable from our code;
+#                   # review by 2026-12-31

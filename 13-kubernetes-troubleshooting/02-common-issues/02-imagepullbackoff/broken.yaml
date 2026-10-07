@@ -1,0 +1,12 @@
+# SYMPTOM: STATUS=ImagePullBackOff
+# CAUSE: the image tag does not exist in the registry. ErrImagePull is the
+#        first failure; after repeated retries the kubelet backs off and the
+#        status becomes ImagePullBackOff.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagepull-demo
+spec:
+  containers:
+    - name: app
+      image: nginx:this-tag-does-not-exist

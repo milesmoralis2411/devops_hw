@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-green
+  labels:
+    app: bg-web
+    version: green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bg-web
+      version: green
+  template:
+    metadata:
+      labels:
+        app: bg-web
+        version: green
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "VERSION=GREEN v2.0 pod=$HOSTNAME" > /usr/share/nginx/html/index.html && exec nginx -g "daemon off;"
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits:   { cpu: 100m, memory: 64Mi }

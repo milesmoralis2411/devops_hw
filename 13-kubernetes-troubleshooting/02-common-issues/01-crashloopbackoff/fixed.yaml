@@ -1,0 +1,33 @@
+# FIX: supply the config the app was looking for, and stop exiting.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crashloop-config
+data:
+  config.yaml: |
+    app: demo
+    port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crashloop-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: crashloop-demo }
+  template:
+    metadata:
+      labels: { app: crashloop-demo }
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["/bin/sh", "-c", "cat /etc/app/config.yaml; echo 'started OK'; sleep 3600"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/app
+      volumes:
+        - name: config
+          configMap:
+            name: crashloop-config

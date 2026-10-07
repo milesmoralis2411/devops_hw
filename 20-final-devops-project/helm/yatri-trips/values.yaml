@@ -1,0 +1,106 @@
+# Default values (development-sized). Production overrides live in
+# values-prod.yaml, and the GitOps Application layers them on top.
+
+replicaCount: 2
+
+image:
+  repository: yatri-trips
+  tag: ""                 # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ---------------------------------------------------------------- ConfigMap
+config:
+  APP_ENV: development
+  LOG_LEVEL: info
+  MAX_TRIPS: "1000"
+
+# ------------------------------------------------------------------- Secret
+# GitOps rule: secret VALUES never live in Git. By default the chart expects
+# an existing Secret (created by Terraform in cluster-bootstrap/ or by
+# kubectl). Set secret.create=true only for throwaway local installs.
+secret:
+  create: false
+  existingSecret: yatri-trips-secret
+  apiKey: ""              # used only when create=true
+
+# ------------------------------------------------------------------ Service
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+# ------------------------------------------------------------------ Ingress
+ingress:
+  enabled: true
+  className: nginx
+  host: yatri.local
+  annotations: {}
+
+# ------------------------------------------------------------------ Storage
+persistence:
+  enabled: true
+  storageClass: standard
+  accessMode: ReadWriteOnce   # single-node lab; use RWX (EFS/NFS) for multi-node
+  size: 256Mi
+
+# -------------------------------------------------------------- Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# ---------------------------------------------------------------- Resources
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 192Mi
+
+# ------------------------------------------------------------------- Probes
+probes:
+  startup:
+    path: /healthz
+    periodSeconds: 2
+    failureThreshold: 30
+  readiness:
+    path: /readyz
+    periodSeconds: 5
+    failureThreshold: 3
+  liveness:
+    path: /healthz
+    periodSeconds: 10
+    failureThreshold: 3
+
+# --------------------------------------------------------------- Monitoring
+metrics:
+  enabled: true           # adds prometheus.io/* scrape annotations
+  path: /metrics
+
+# ----------------------------------------------------------------- Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

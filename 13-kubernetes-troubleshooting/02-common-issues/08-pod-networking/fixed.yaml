@@ -1,0 +1,49 @@
+# FIX: listen on all interfaces, and probe over the network (httpGet goes
+# to the Pod IP from the kubelet) so a bad bind address fails the probe.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loopback-conf
+data:
+  default.conf: |
+    server {
+      listen 80;                    # 0.0.0.0:80
+      location / { return 200 "hello from $hostname\n"; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loopback-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: loopback-web }
+  template:
+    metadata:
+      labels: { app: loopback-web }
+      annotations:
+        fixed: "listen-on-all-interfaces"   # changes the template -> new Pods pick up the ConfigMap
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports: [{ containerPort: 80 }]
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 5
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: conf
+          configMap:
+            name: loopback-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loopback-web
+spec:
+  selector: { app: loopback-web }
+  ports: [{ port: 80, targetPort: 80 }]

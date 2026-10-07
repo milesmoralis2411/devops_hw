@@ -1,0 +1,9 @@
+apiVersion: v2
+name: yatri-trips
+description: Yatri Trips API - final DevOps project
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords: [yatri, trips, final-project]
+maintainers:
+  - name: Varun Mundada

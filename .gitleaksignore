@@ -1,0 +1,6 @@
+# Known, reviewed findings that secret scanning should not re-report.
+# Each line is a Gitleaks fingerprint. Anything NOT listed here still fails the scan.
+#
+# Session 12 lab Secret (throwaway demo password, never used outside minikube).
+# Reported as Finding 1 in 16-cicd-devsecops/README.md. Baselined 2026-10-07.
+47f0f69a5754627d645a2a15e20cef6a33331028:11-kubernetes-ingress-configmaps-secrets/full-demo/secret.yaml:generic-api-key:14

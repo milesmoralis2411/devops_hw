@@ -1,0 +1,13 @@
+# Persistent storage for the mini project, via dynamic provisioning.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notes-data
+  labels: { app: notes }
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+  storageClassName: standard     # minikube default provisioner

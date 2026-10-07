@@ -1,0 +1,10 @@
+# Accepted risks. Every entry needs a reason, an owner and a review date.
+#
+# KSV047 - "Do not allow privilege escalation from node proxy"
+#   Prometheus scrapes cAdvisor and kubelet volume stats through the API server
+#   proxy (nodes/proxy), which is how per-container CPU/memory and PVC usage
+#   are collected. The permission is read-only (get), bound only to the
+#   prometheus ServiceAccount in the monitoring namespace.
+#   Owner: platform. Review by: 2027-01-31 (alternative: scrape kubelet :10250
+#   directly with a dedicated client certificate).
+AVD-KSV-0047

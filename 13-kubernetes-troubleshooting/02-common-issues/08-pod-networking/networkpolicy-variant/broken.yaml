@@ -1,0 +1,60 @@
+# SYMPTOM: Pods are Running and the Service has endpoints, but traffic
+#          between Pods times out.
+# CAUSE: a default-deny NetworkPolicy is in force and no rule allows the
+#        frontend to reach the backend. Note it also blocks DNS (UDP 53),
+#        which usually shows up first as "nslookup: can't resolve".
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: netpol-demo
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: netpol-demo
+spec:
+  podSelector: {}          # every Pod in the namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  # no ingress/egress rules at all => everything denied
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: netpol-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: netpol-demo
+spec:
+  selector: { app: backend }
+  ports: [{ port: 80 }]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: netpol-demo
+  labels: { app: frontend }
+spec:
+  containers:
+    - name: client
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "sleep 3600"]

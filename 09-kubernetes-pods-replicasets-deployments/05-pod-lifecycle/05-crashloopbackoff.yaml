@@ -1,0 +1,15 @@
+# PHASE: Running, but the CONTAINER state is Waiting(CrashLoopBackOff)
+# Same failing command as 04, but restartPolicy: Always. The kubelet keeps
+# restarting it with exponential backoff: 10s, 20s, 40s ... capped at 5m.
+# Note the Pod phase stays Running - CrashLoopBackOff is a container state.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-crashloop
+  labels: { demo: pod-lifecycle, phase: crashloop }
+spec:
+  restartPolicy: Always
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo 'starting'; sleep 3; exit 1"]

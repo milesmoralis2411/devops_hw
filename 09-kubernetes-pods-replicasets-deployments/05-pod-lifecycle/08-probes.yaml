@@ -1,0 +1,29 @@
+# PROBES drive readiness and restarts during the Running phase.
+#   startupProbe   - gates the other two; gives a slow starter time to boot
+#   readinessProbe - controls Service endpoint membership (no traffic if failing)
+#   livenessProbe  - a failure here RESTARTS the container
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-probes
+  labels: { demo: pod-lifecycle, phase: probes }
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      startupProbe:
+        httpGet: { path: /, port: 80 }
+        failureThreshold: 30        # allow up to 30 x 2s = 60s to start
+        periodSeconds: 2
+      readinessProbe:
+        httpGet: { path: /, port: 80 }
+        initialDelaySeconds: 2
+        periodSeconds: 5
+        failureThreshold: 3
+      livenessProbe:
+        httpGet: { path: /, port: 80 }
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        failureThreshold: 3

@@ -1,0 +1,35 @@
+# Production overlay: same chart, different values.
+# Used as:  helm install yatri ./yatri-app -f values-prod.yaml
+replicaCount: 3
+
+image:
+  tag: "1.26-alpine"
+
+config:
+  APP_NAME: "Yatri App"
+  APP_ENV: "production"
+  LOG_LEVEL: "warn"
+  GREETING: "Hello from Helm - PRODUCTION"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: yatri-prod.local
+      paths:
+        - path: /
+          pathType: Prefix

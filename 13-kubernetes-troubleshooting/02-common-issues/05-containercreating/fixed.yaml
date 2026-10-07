@@ -1,0 +1,26 @@
+# FIX: create the Secret the volume refers to.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tls-certs
+type: Opaque
+stringData:
+  tls.crt: "demo-cert-placeholder"
+  tls.key: "demo-key-placeholder"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: containercreating-demo-fixed
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      volumeMounts:
+        - name: tls
+          mountPath: /etc/tls
+          readOnly: true
+  volumes:
+    - name: tls
+      secret:
+        secretName: tls-certs

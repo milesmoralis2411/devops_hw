@@ -1,0 +1,121 @@
+# Alertmanager groups, de-duplicates and routes alerts (routing tree in
+# config/alertmanager.yml). In the lab every alert goes to "alert-log", an nginx
+# that writes each webhook payload to its log: kubectl logs deploy/alert-log.
+# Swap the receiver for Slack or PagerDuty in production.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels: { app: alertmanager }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: alertmanager }
+  template:
+    metadata:
+      labels: { app: alertmanager }
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          args: [--config.file=/etc/alertmanager/alertmanager.yml, --storage.path=/alertmanager]
+          ports:
+            - { name: web, containerPort: 9093 }
+          readinessProbe:
+            httpGet: { path: /-/ready, port: web }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits:   { cpu: 100m, memory: 128Mi }
+          volumeMounts:
+            - { name: config, mountPath: /etc/alertmanager }
+            - { name: data, mountPath: /alertmanager }
+      volumes:
+        - name: config
+          configMap: { name: alertmanager-config }
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  selector: { app: alertmanager }
+  ports:
+    - { name: web, port: 9093, targetPort: web }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alert-log-conf
+  namespace: monitoring
+data:
+  default.conf: |
+    # nginx only fills $request_body once the body has been read, so the
+    # request is proxied to a second local server that just answers 200.
+    log_format alert escape=none '$time_iso8601 $request_body';
+    server {
+      listen 80;
+      location / {
+        access_log /dev/stdout alert;
+        proxy_pass http://127.0.0.1:8081;
+      }
+    }
+    server {
+      listen 127.0.0.1:8081;
+      access_log off;
+      location / { return 200 "ok\n"; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-log
+  namespace: monitoring
+  labels: { app: alert-log }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: alert-log }
+  template:
+    metadata:
+      labels: { app: alert-log }
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25-alpine
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: 5m, memory: 16Mi }
+            limits:   { cpu: 50m, memory: 64Mi }
+          volumeMounts:
+            - { name: conf, mountPath: /etc/nginx/conf.d }
+            - { name: cache, mountPath: /var/cache/nginx }
+            - { name: run, mountPath: /var/run }
+      volumes:
+        - name: conf
+          configMap: { name: alert-log-conf }
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-log
+  namespace: monitoring
+spec:
+  selector: { app: alert-log }
+  ports:
+    - port: 80
+      targetPort: 80

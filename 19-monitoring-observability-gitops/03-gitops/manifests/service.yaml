@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yatri-gitops
+spec:
+  selector: { app: yatri-gitops }
+  ports:
+    - port: 80
+      targetPort: 80

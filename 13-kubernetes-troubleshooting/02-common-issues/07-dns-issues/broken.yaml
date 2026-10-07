@@ -1,0 +1,48 @@
+# SYMPTOM: "nslookup backend" fails from inside this Pod, although the
+#          Service exists in another namespace.
+# CAUSE: a bare name only resolves within the Pod's OWN namespace. The
+#        Service lives in "backend-ns", so it must be qualified.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backend-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: backend-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: backend-ns
+spec:
+  selector: { app: backend }
+  ports:
+    - port: 80
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-client
+  namespace: default
+spec:
+  containers:
+    - name: client
+      image: busybox:1.36
+      # tries the SHORT name from a different namespace -> NXDOMAIN
+      command: ["/bin/sh", "-c", "nslookup backend; sleep 3600"]

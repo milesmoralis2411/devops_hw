@@ -1,0 +1,13 @@
+# FIX (public image): point at a repository that exists.
+# FIX (private image): create a pull secret and reference it, as shown below.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: errimage-demo-fixed
+spec:
+  # imagePullSecrets:
+  #   - name: regcred      # kubectl create secret docker-registry regcred ...
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo pulled fine; sleep 3600"]

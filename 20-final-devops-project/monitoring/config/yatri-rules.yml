@@ -1,0 +1,105 @@
+groups:
+  # ---------------------------------------------- application (RED + business)
+  - name: yatri-application
+    rules:
+      - alert: YatriTargetDown
+        expr: up{app="yatri-trips"} == 0
+        for: 1m
+        labels: { severity: critical, team: yatri }
+        annotations:
+          summary: "Prometheus cannot scrape {{ $labels.pod }}"
+
+      - alert: YatriNoReadyReplicas
+        expr: kube_deployment_status_replicas_available{namespace="yatri",deployment="yatri-trips"} == 0
+        for: 1m
+        labels: { severity: critical, team: yatri }
+        annotations:
+          summary: "yatri-trips has no available replicas - the API is down"
+
+      - alert: YatriHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{app="yatri-trips",status=~"5.."}[2m]))
+            / sum(rate(http_requests_total{app="yatri-trips"}[2m])) > 0.05
+        for: 2m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "More than 5% of yatri-trips requests are failing"
+          description: "Error ratio {{ $value | humanizePercentage }}"
+
+      - alert: YatriHighLatencyP95
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{app="yatri-trips"}[5m]))) > 0.5
+        for: 5m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "yatri-trips p95 latency above 500ms"
+
+      # A security signal from application metrics: a burst of rejected API keys.
+      - alert: YatriAuthFailureSpike
+        expr: sum(rate(yatri_auth_failures_total[5m])) * 60 > 10
+        for: 2m
+        labels: { severity: warning, team: security }
+        annotations:
+          summary: "More than 10 rejected API-key attempts per minute - possible credential stuffing"
+
+  # ------------------------------------------------- meta: watch the watchers
+  # Added after the 1.1.0 incident: a broken scrape target silently disabled
+  # every alert built on kube-state-metrics, and nothing paged.
+  - name: monitoring-health
+    rules:
+      - alert: MonitoringTargetDown
+        expr: up == 0
+        for: 2m
+        labels: { severity: critical, team: platform }
+        annotations:
+          summary: "Prometheus cannot scrape job {{ $labels.job }} ({{ $labels.instance }}) - alerts that depend on it are blind"
+
+  # ---------------------------------------------------------- platform
+  - name: yatri-platform
+    rules:
+      - alert: YatriPodCrashLooping
+        expr: increase(kube_pod_container_status_restarts_total{namespace="yatri"}[10m]) > 3
+        labels: { severity: critical, team: yatri }
+        annotations:
+          summary: "{{ $labels.pod }} restarted more than 3 times in 10 minutes"
+
+      - alert: YatriPodsNotReady
+        expr: sum by (namespace) (kube_pod_status_ready{namespace="yatri",condition="false"}) > 0
+        for: 3m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "{{ $value }} Pod(s) in namespace yatri are not Ready"
+
+      - alert: YatriImagePullFailing
+        expr: sum by (pod) (kube_pod_container_status_waiting_reason{namespace="yatri",reason=~"ErrImagePull|ImagePullBackOff"}) > 0
+        for: 2m
+        labels: { severity: critical, team: yatri }
+        annotations:
+          summary: "{{ $labels.pod }} cannot pull its image"
+
+      - alert: YatriHPAMaxedOut
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas{namespace="yatri"}
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="yatri"}
+        for: 10m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} is at max replicas - capacity exhausted"
+
+      - alert: YatriContainerNearMemoryLimit
+        expr: |
+          sum by (pod) (container_memory_working_set_bytes{namespace="yatri",container!=""})
+            / sum by (pod) (kube_pod_container_resource_limits{namespace="yatri",resource="memory"}) > 0.9
+        for: 5m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "{{ $labels.pod }} is above 90% of its memory limit"
+
+      - alert: YatriPVCAlmostFull
+        expr: |
+          kubelet_volume_stats_available_bytes{namespace="yatri"}
+            / kubelet_volume_stats_capacity_bytes{namespace="yatri"} < 0.10
+        for: 5m
+        labels: { severity: warning, team: yatri }
+        annotations:
+          summary: "PVC {{ $labels.persistentvolumeclaim }} has less than 10% free"

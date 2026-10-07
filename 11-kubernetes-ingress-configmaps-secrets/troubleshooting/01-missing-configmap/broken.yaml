@@ -1,0 +1,18 @@
+# BROKEN: references a ConfigMap named "app-config" that does not exist.
+# Expected symptom: Pod status CreateContainerConfigError
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ts-missing-configmap
+  labels: { demo: troubleshooting, case: "01" }
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo APP_ENV=$APP_ENV; sleep 3600"]
+      env:
+        - name: APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config      # <-- does not exist
+              key: environment

@@ -1,0 +1,86 @@
+# The mini project workload. It exercises all three Session 13 topics:
+#   storage - an init container seeds a PVC, the app serves from it
+#   probes  - startup, readiness and liveness all configured
+#   HPA     - CPU requests are set so the HPA has a baseline to measure
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes
+  labels: { app: notes }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: notes }
+  template:
+    metadata:
+      labels: { app: notes }
+    spec:
+      # Seed the persistent volume once, before the web server starts.
+      initContainers:
+        - name: seed-content
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              if [ ! -f /data/index.html ]; then
+                echo "<h1>$APP_NAME</h1><p>env: $APP_ENV</p><p>seeded: $(date)</p>" > /data/index.html
+                echo "seeded fresh content"
+              else
+                echo "content already present, leaving it alone"
+              fi
+              echo "ok" > /data/healthz
+          envFrom:
+            - configMapRef:
+                name: notes-config
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: notes-config
+            - secretRef:
+                name: notes-secret
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/nginx/html
+
+          startupProbe:
+            httpGet: { path: /healthz, port: 80 }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /healthz, port: 80 }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: 80 }
+            periodSeconds: 10
+            failureThreshold: 3
+
+          resources:
+            requests: { cpu: 50m,  memory: 32Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: notes-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes
+  labels: { app: notes }
+spec:
+  type: ClusterIP
+  selector: { app: notes }
+  ports:
+    - port: 80
+      targetPort: 80

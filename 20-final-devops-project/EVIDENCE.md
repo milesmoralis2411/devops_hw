@@ -1,0 +1,714 @@
+# Evidence — Final project, end-to-end deployment
+
+Executed 2026-10-07 on Windows 11 + Docker Desktop: minikube v1.39.0 (Kubernetes v1.37.0, containerd),
+Terraform v1.16.5, Argo CD v3.5.4 (Helm chart 10.10.0), Gitea 1.27.3, registry:2,
+Trivy 0.57.1, Gitleaks 8.21.2, Semgrep 1.179.0. Output is verbatim; `<platform-repo>` stands for the
+local clone of the GitOps repository (a temporary directory). The incident run is in
+[troubleshooting/EVIDENCE.md](troubleshooting/EVIDENCE.md).
+
+## 0. Lab prerequisites: a container registry the cluster can pull from
+```text
+$ docker run -d --name yatri-registry -p 5000:5000 --restart unless-stopped registry:2
+7a0a63ed236602ae8a8e36f8d23095221323d7bbee269b798e7baab5c2ccf51c
+
+# minikube containerd: allow plain-HTTP pulls from the host registry
+$ minikube ssh -- cat /etc/containerd/certs.d/host.minikube.internal:5000/hosts.toml
+[host."http://host.minikube.internal:5000"]
+  capabilities = ["pull", "resolve"]
+  skip_verify = true
+
+```
+
+## 1. Terraform - bootstrap the cluster (namespaces, guardrails, secrets, Argo CD)
+```text
+$ terraform init
+Initializing the backend...
+
+Initializing provider plugins...
+- Reusing previous version of hashicorp/kubernetes from the dependency lock file
+- Reusing previous version of hashicorp/helm from the dependency lock file
+- Reusing previous version of hashicorp/random from the dependency lock file
+- Using previously-installed hashicorp/random v3.9.1
+- Using previously-installed hashicorp/kubernetes v2.38.0
+- Using previously-installed hashicorp/helm v2.17.0
+
+Terraform has been successfully initialized!
+
+$ terraform fmt -check
+
+$ terraform validate
+Success! The configuration is valid.
+
+
+$ terraform plan -out=bootstrap.tfplan
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # helm_release.argocd will be created
+  + resource "helm_release" "argocd" {
+      + atomic                     = false
+      + chart                      = "argo-cd"
+      + cleanup_on_fail            = false
+      + create_namespace           = false
+      + dependency_update          = false
+      + disable_crd_hooks          = false
+      + disable_openapi_validation = false
+      + disable_webhooks           = false
+      + force_update               = false
+      + id                         = (known after apply)
+      + lint                       = false
+      + manifest                   = (known after apply)
+      + max_history                = 0
+      + metadata                   = (known after apply)
+      + name                       = "argocd"
+      + namespace                  = "argocd"
+      + pass_credentials           = false
+      + recreate_pods              = false
+      + render_subchart_notes      = true
+      + replace                    = false
+      + repository                 = "https://argoproj.github.io/argo-helm"
+      + reset_values               = false
+      + reuse_values               = false
+      + skip_crds                  = false
+      + status                     = "deployed"
+      + timeout                    = 900
+      + values                     = [
+          + <<-EOT
+                "configs":
+                  "cm":
+                    "timeout.reconciliation": "30s"
+                  "params":
+                    "server.insecure": true
+                "dex":
+                  "enabled": false
+            EOT,
+        ]
+      + verify                     = false
+      + version                    = "10.10.0"
+      + wait                       = true
+      + wait_for_jobs              = false
+    }
+
+  # kubernetes_limit_range.app will be created
+  + resource "kubernetes_limit_range" "app" {
+      + id = (known after apply)
+
+      + metadata {
+          + generation       = (known after apply)
+          + name             = "yatri-defaults"
+          + namespace        = "yatri"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+
+      + spec {
+          + limit {
+              + default         = {
+                  + "cpu"    = "300m"
+                  + "memory" = "256Mi"
+                }
+              + default_request = {
+                  + "cpu"    = "50m"
+                  + "memory" = "64Mi"
+                }
+              + type            = "Container"
+            }
+        }
+    }
+
+  # kubernetes_namespace.app will be created
+  + resource "kubernetes_namespace" "app" {
+      + id                               = (known after apply)
+      + wait_for_default_service_account = false
+
+      + metadata {
+          + generation       = (known after apply)
+          + labels           = {
+              + "app.kubernetes.io/part-of"          = "yatri"
+              + "pod-security.kubernetes.io/enforce" = "restricted"
+              + "pod-security.kubernetes.io/warn"    = "restricted"
+            }
+          + name             = "yatri"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+
+  # kubernetes_namespace.argocd will be created
+  + resource "kubernetes_namespace" "argocd" {
+      + id                               = (known after apply)
+      + wait_for_default_service_account = false
+
+      + metadata {
+          + generation       = (known after apply)
+          + labels           = {
+              + "app.kubernetes.io/part-of" = "yatri"
+            }
+          + name             = "argocd"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+
+  # kubernetes_namespace.monitoring will be created
+  + resource "kubernetes_namespace" "monitoring" {
+      + id                               = (known after apply)
+      + wait_for_default_service_account = false
+
+      + metadata {
+          + generation       = (known after apply)
+          + labels           = {
+              + "app.kubernetes.io/part-of" = "yatri"
+            }
+          + name             = "monitoring"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+
+  # kubernetes_resource_quota.app will be created
+  + resource "kubernetes_resource_quota" "app" {
+      + id = (known after apply)
+
+      + metadata {
+          + generation       = (known after apply)
+          + name             = "yatri-quota"
+          + namespace        = "yatri"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+
+      + spec {
+          + hard = {
+              + "limits.cpu"             = "8"
+              + "limits.memory"          = "8Gi"
+              + "persistentvolumeclaims" = "5"
+              + "pods"                   = "30"
+              + "requests.cpu"           = "4"
+              + "requests.memory"        = "4Gi"
+            }
+        }
+    }
+
+  # kubernetes_secret.api_key will be created
+  + resource "kubernetes_secret" "api_key" {
+      + binary_data_wo                 = (write-only attribute)
+      + data                           = (sensitive value)
+      + data_wo                        = (write-only attribute)
+      + id                             = (known after apply)
+      + type                           = "Opaque"
+      + wait_for_service_account_token = true
+
+      + metadata {
+          + generation       = (known after apply)
+          + labels           = {
+              + "app.kubernetes.io/part-of" = "yatri"
+            }
+          + name             = "yatri-trips-secret"
+          + namespace        = "yatri"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+
+  # kubernetes_secret.grafana_admin will be created
+  + resource "kubernetes_secret" "grafana_admin" {
+      + binary_data_wo                 = (write-only attribute)
+      + data                           = (sensitive value)
+      + data_wo                        = (write-only attribute)
+      + id                             = (known after apply)
+      + type                           = "Opaque"
+      + wait_for_service_account_token = true
+
+      + metadata {
+          + generation       = (known after apply)
+          + name             = "grafana-admin"
+          + namespace        = "monitoring"
+          + resource_version = (known after apply)
+          + uid              = (known after apply)
+        }
+    }
+
+  # random_password.api_key will be created
+  + resource "random_password" "api_key" {
+      + bcrypt_hash = (sensitive value)
+      + id          = (known after apply)
+      + length      = 40
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + numeric     = true
+      + result      = (sensitive value)
+      + special     = false
+      + upper       = true
+    }
+
+  # random_password.grafana will be created
+  + resource "random_password" "grafana" {
+      + bcrypt_hash = (sensitive value)
+      + id          = (known after apply)
+      + length      = 24
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + numeric     = true
+      + result      = (sensitive value)
+      + special     = false
+      + upper       = true
+    }
+
+Plan: 10 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + api_key                       = (sensitive value)
+  + api_key_secret                = "yatri/yatri-trips-secret"
+  + argocd_admin_password_command = "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+  + argocd_version                = (known after apply)
+  + grafana_admin_password        = (sensitive value)
+  + namespaces                    = [
+      + "yatri",
+      + "monitoring",
+      + "argocd",
+    ]
+
+$ terraform apply bootstrap.tfplan
+random_password.api_key: Creating...
+random_password.grafana: Creating...
+kubernetes_namespace.argocd: Creating...
+kubernetes_namespace.monitoring: Creating...
+kubernetes_namespace.app: Creating...
+kubernetes_namespace.monitoring: Creation complete after 0s [id=monitoring]
+kubernetes_namespace.app: Creation complete after 0s [id=yatri]
+kubernetes_namespace.argocd: Creation complete after 0s [id=argocd]
+kubernetes_resource_quota.app: Creating...
+kubernetes_limit_range.app: Creating...
+kubernetes_limit_range.app: Creation complete after 0s [id=yatri/yatri-defaults]
+random_password.api_key: Creation complete after 0s [id=none]
+random_password.grafana: Creation complete after 0s [id=none]
+kubernetes_secret.grafana_admin: Creating...
+kubernetes_secret.api_key: Creating...
+kubernetes_secret.grafana_admin: Creation complete after 0s [id=monitoring/grafana-admin]
+kubernetes_secret.api_key: Creation complete after 0s [id=yatri/yatri-trips-secret]
+kubernetes_resource_quota.app: Creation complete after 1s [id=yatri/yatri-quota]
+helm_release.argocd: Creating...
+helm_release.argocd: Still creating... [00m10s elapsed]
+helm_release.argocd: Still creating... [00m20s elapsed]
+helm_release.argocd: Still creating... [00m30s elapsed]
+helm_release.argocd: Still creating... [00m40s elapsed]
+helm_release.argocd: Still creating... [00m50s elapsed]
+helm_release.argocd: Still creating... [01m00s elapsed]
+helm_release.argocd: Still creating... [01m10s elapsed]
+helm_release.argocd: Still creating... [01m20s elapsed]
+helm_release.argocd: Still creating... [01m30s elapsed]
+helm_release.argocd: Still creating... [01m40s elapsed]
+helm_release.argocd: Still creating... [01m50s elapsed]
+helm_release.argocd: Creation complete after 1m57s [id=argocd]
+
+Apply complete! Resources: 10 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+api_key = <sensitive>
+api_key_secret = "yatri/yatri-trips-secret"
+argocd_admin_password_command = "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+argocd_version = "argo-cd 10.10.0 (app v3.5.4)"
+grafana_admin_password = <sensitive>
+namespaces = [
+  "yatri",
+  "monitoring",
+  "argocd",
+]
+
+$ terraform output
+api_key = <sensitive>
+api_key_secret = "yatri/yatri-trips-secret"
+argocd_admin_password_command = "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+argocd_version = "argo-cd 10.10.0 (app v3.5.4)"
+grafana_admin_password = <sensitive>
+namespaces = [
+  "yatri",
+  "monitoring",
+  "argocd",
+]
+
+$ kubectl get ns yatri monitoring argocd --show-labels
+NAME         STATUS   AGE   LABELS
+yatri        Active   2m    app.kubernetes.io/part-of=yatri,kubernetes.io/metadata.name=yatri,pod-security.kubernetes.io/enforce=restricted,pod-security.kubernetes.io/warn=restricted
+monitoring   Active   2m    app.kubernetes.io/part-of=yatri,kubernetes.io/metadata.name=monitoring
+argocd       Active   2m    app.kubernetes.io/part-of=yatri,kubernetes.io/metadata.name=argocd
+
+$ kubectl -n yatri get resourcequota,limitrange,secret
+NAME                        REQUEST                                                                              LIMIT                                   AGE
+resourcequota/yatri-quota   persistentvolumeclaims: 0/5, pods: 0/30, requests.cpu: 0/4, requests.memory: 0/4Gi   limits.cpu: 0/8, limits.memory: 0/8Gi   2m
+
+NAME                        CREATED AT
+limitrange/yatri-defaults   2026-10-07T17:18:07Z
+
+NAME                        TYPE     DATA   AGE
+secret/yatri-trips-secret   Opaque   1      2m
+
+$ kubectl -n argocd get pods
+NAME                                               READY   STATUS    RESTARTS   AGE
+argocd-application-controller-0                    1/1     Running   0          105s
+argocd-applicationset-controller-5c9d6d98c-8plvn   1/1     Running   0          106s
+argocd-notifications-controller-7747455f86-dnvfw   1/1     Running   0          106s
+argocd-redis-757969f6f8-gk6w2                      1/1     Running   0          106s
+argocd-repo-server-5f69f4f55c-fd9rh                1/1     Running   0          105s
+argocd-server-cc7c4d859-4w9lw                      1/1     Running   0          105s
+
+$ terraform output -raw api_key     # (kept in a shell variable, not printed)
+api key length: 40
+```
+
+## 2. Git server + the platform repository
+```text
+$ kubectl apply -f gitops/git-server/gitea.yaml
+namespace/gitea created
+deployment.apps/gitea created
+service/gitea created
+
+$ kubectl -n gitea rollout status deploy/gitea --timeout=600s
+Waiting for deployment "gitea" rollout to finish: 0 of 1 updated replicas are available...
+deployment "gitea" successfully rolled out
+
+created Gitea user 'yatri' (password generated, not shown)
+$ git push http://yatri:****@localhost:3300/yatri/platform.git main
+$ git -C "<platform-repo>" log --oneline
+793f2a9 Yatri platform: app, chart, monitoring, gitops
+
+$ git -C "<platform-repo>" ls-files | cut -d/ -f1 | sort | uniq -c
+      1 .github
+     10 application
+      3 docker
+      5 gitops
+     14 helm
+     10 kubernetes
+      8 monitoring
+      1 scripts
+      5 security
+     13 terraform
+      2 troubleshooting
+
+```
+
+## 3. CI pipeline - build, scan, gate and publish v1.0.0
+```text
+$ bash "<platform-repo>/scripts/pipeline.sh" 1.0.0 "<platform-repo>"
+
+========== 1/8 Unit tests ==========
+✔ validateTrip accepts a valid trip (2.1561ms)
+✔ validateTrip rejects bad input (0.2142ms)
+✔ store persists trips to disk and reloads them (7.0348ms)
+✔ concurrent writers from separate processes lose no trips (411.2384ms)
+✔ GET / returns service info (12.7316ms)
+✔ GET /healthz and /readyz report healthy (2.7286ms)
+✔ POST /api/trips requires the API key (2.3375ms)
+✔ POST, GET and DELETE a trip (13.3932ms)
+✔ POST rejects invalid payloads (1.2689ms)
+✔ trip limit is enforced (11.6547ms)
+✔ GET /metrics exposes Prometheus metrics (2.5336ms)
+✔ unknown routes return 404 (1.0085ms)
+ℹ tests 12
+ℹ pass 12
+ℹ fail 0
+
+========== 2/8 SAST ==========
+semgrep not installed locally - SAST runs in the GitHub Actions job (semgrep/semgrep container)
+
+========== 3/8 SCA + IaC scanning - dependencies and misconfigurations ==========
+found 0 vulnerabilities
+trivy fs: no HIGH/CRITICAL vulnerabilities, misconfigurations or secrets (1 accepted risk in .trivyignore)
+
+========== 4/8 Secret scanning ==========
+[90m5:20PM[0m [32mINF[0m scan completed in 694ms
+[90m5:20PM[0m [32mINF[0m no leaks found
+gitleaks: no secrets found
+
+========== 5/8 Build image yatri-trips:1.0.0 ==========
+sha256:725aa7db9bccd700d5f67c18784f05a26135aaf7c14dff65407a32f576e17932
+size=60716582 user=node created=2026-10-07T17:17:41.262716869Z
+
+========== 6/8 Image scan ==========
+yatri-trips:1.0.0 (alpine 3.24.2): 0 HIGH/CRITICAL
+Node.js: 0 HIGH/CRITICAL
+
+========== 7/8 Security gate ==========
+Policy : CRITICAL <= 0, HIGH <= 5 (fixable only)
+Found  : CRITICAL = 0, HIGH = 0
+SECURITY GATE: PASSED
+
+========== 8/8 Push + GitOps deploy ==========
+localhost:5000/yatri-trips:1.0.0
+{"name":"yatri-trips","tags":["1.0.0"]}
+
+94d2997 deploy: yatri-trips 1.0.0
+pushed - Argo CD will roll out 1.0.0
+
+$ curl -s http://localhost:5000/v2/_catalog
+{"repositories":["yatri-trips"]}
+
+```
+
+## 4. GitOps - one Application by hand, everything else from Git
+```text
+$ cat gitops/root-app.yaml
+# App of Apps: the only object applied by hand. It points Argo CD at gitops/apps/,
+# and every Application in that folder is created and managed from Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yatri-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/yatri/platform.git
+    targetRevision: main
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+$ kubectl apply -f gitops/root-app.yaml
+application.argoproj.io/yatri-root created
+
+$ kubectl -n argocd get applications
+NAME               SYNC STATUS   HEALTH STATUS
+yatri-monitoring   Synced        Healthy
+yatri-root         Synced        Healthy
+yatri-trips        Synced        Healthy
+
+yatri-root: sync=Synced health=Healthy rev=94d2997c9d233592cd61dcc28b4202c0ced402f1
+yatri-monitoring: sync=Synced health=Healthy rev=94d2997c9d233592cd61dcc28b4202c0ced402f1
+yatri-trips: sync=Synced health=Healthy rev=94d2997c9d233592cd61dcc28b4202c0ced402f1
+
+```
+
+## 5. Verify the deployment
+```text
+$ kubectl -n yatri get deploy,rs,pods,svc,ingress,hpa,pdb,pvc
+NAME                          READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/yatri-trips   2/2     2            2           2m6s
+
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/yatri-trips-5dddd95b75   2         2         2       2m6s
+
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/yatri-trips-5dddd95b75-457ph   1/1     Running   0          2m6s
+pod/yatri-trips-5dddd95b75-krq2g   1/1     Running   0          2m6s
+
+NAME                  TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/yatri-trips   ClusterIP   10.102.158.75   <none>        80/TCP    2m7s
+
+NAME                                    CLASS   HOSTS              ADDRESS        PORTS   AGE
+ingress.networking.k8s.io/yatri-trips   nginx   yatri-prod.local   192.168.49.2   80      2m6s
+
+NAME                                              REFERENCE                TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/yatri-trips   Deployment/yatri-trips   cpu: 2%/70%   2         8         2          2m6s
+
+NAME                                     MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+poddisruptionbudget.policy/yatri-trips   1               N/A               1                     2m8s
+
+NAME                                     STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/yatri-trips-data   Bound    pvc-adceec3e-b68a-4e89-9f24-dfa8e364e014   256Mi      RWO            standard       <unset>                 2m7s
+
+$ kubectl -n yatri get pod -l app.kubernetes.io/name=yatri-trips -o jsonpath='{range .items[*]}{.metadata.name}  image={.spec.containers[0].image}  user={.spec.securityContext.runAsUser}{"\n"}{end}'
+yatri-trips-5dddd95b75-457ph  image=host.minikube.internal:5000/yatri-trips:1.0.0  user=1000
+yatri-trips-5dddd95b75-krq2g  image=host.minikube.internal:5000/yatri-trips:1.0.0  user=1000
+
+$ kubectl -n yatri describe pod -l app.kubernetes.io/name=yatri-trips | grep -E '^\s+(Liveness|Readiness|Startup):' | head -3
+    Liveness:   http-get http://:http/healthz delay=0s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:http/readyz delay=0s timeout=1s period=5s #success=1 #failure=3
+    Startup:    http-get http://:http/healthz delay=0s timeout=1s period=2s #success=1 #failure=30
+
+# through the Ingress
+$ minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/
+{"service":"yatri-trips","version":"1.0.0","env":"production"}
+$ minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/readyz
+{"status":"ready","storage":true,"apiKeyConfigured":true}
+# write requires the API key from the Terraform-managed Secret
+$ minikube ssh -- "curl -s -w ' [HTTP_%{http_code}]' -X POST -H 'Host:yatri-prod.local' http://localhost/api/trips"
+{"error":"missing or invalid x-api-key"} [HTTP_401]
+$ minikube ssh -- "curl -s -w ' [HTTP_%{http_code}]' -X POST -H 'Host:yatri-prod.local' -H 'x-api-key: wrong-key' http://localhost/api/trips"
+{"error":"missing or invalid x-api-key"} [HTTP_401]
+
+
+$ curl -X POST -H "x-api-key: ****" ... /api/trips   # x3: Jaipur, Leh, Hampi
+$ minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/api/trips
+[{"id":"e5c55af7-ca68-4443-b032-1086dc648913","destination":"Jaipur","days":3,"createdAt":"2026-10-07T17:23:04.176Z"},{"id":"f72b8b24-ebf0-4697-aba7-8ff7271f669f","destination":"Leh","days":3,"createdAt":"2026-10-07T17:23:04.708Z"},{"id":"f15fea66-ad89-4f3c-9dbc-460d13a6ba6c","destination":"Hampi","days":3,"createdAt":"2026-10-07T17:23:05.262Z"}]
+
+```
+
+## 6. Monitoring is watching it
+```text
+$ curl prometheus:9090/api/v1/targets   (summarised)
+  kube-state-metrics   up    http://kube-state-metrics.monitoring.svc:8080/metrics
+  kubernetes-cadvisor  up    https://kubernetes.default.svc:443/api/v1/nodes/minikube/proxy/metrics/cadvisor
+  kubernetes-kubelet   up    https://kubernetes.default.svc:443/api/v1/nodes/minikube/proxy/metrics
+  kubernetes-pods      up    yatri-trips-5dddd95b75-krq2g
+  kubernetes-pods      up    yatri-trips-5dddd95b75-457ph
+  prometheus           up    http://localhost:9090/metrics
+
+$ promql: up{app="yatri-trips"}
+  app=yatri-trips,pod=yatri-trips-5dddd95b75-457ph,version=1.0.0         1.0
+  app=yatri-trips,pod=yatri-trips-5dddd95b75-krq2g,version=1.0.0         1.0
+
+$ promql: yatri_trips_stored
+  app=yatri-trips,pod=yatri-trips-5dddd95b75-457ph,version=1.0.0         3.0
+  app=yatri-trips,pod=yatri-trips-5dddd95b75-krq2g,version=1.0.0         3.0
+
+$ promql: sum by (method, route, status) (increase(http_requests_total{app="yatri-trips"}[5m]))
+  method=GET,route=/healthz,status=200                                   33.9232
+  method=GET,route=/readyz,status=200                                    67.036
+  method=GET,route=/metrics,status=200                                   20.9747
+  method=GET,route=/,status=200                                          0.0
+  method=POST,route=/api/trips,status=201                                0.0
+  method=GET,route=/api/trips,status=200                                 0.0
+
+$ promql: sum by (pod) (container_memory_working_set_bytes{namespace="yatri",container="api"})
+  pod=yatri-trips-5dddd95b75-457ph                                       15327232.0
+  pod=yatri-trips-5dddd95b75-krq2g                                       30281728.0
+
+$ kubectl -n monitoring exec deploy/prometheus -- promtool check rules /etc/prometheus/rules/yatri.yml
+Checking /etc/prometheus/rules/yatri.yml
+  SUCCESS: 11 rules found
+
+
+$ curl -u admin:**** grafana:3000/api/search?query=yatri
+  Yatri  (folder None, uid fg0j2i2sipczkd)
+  Yatri Trips - Service Overview  (folder Yatri, uid yatri-trips)
+
+$ kubectl -n yatri logs deploy/yatri-trips --tail=4
+Found 2 pods, using pod/yatri-trips-5dddd95b75-457ph
+{"ts":"2026-10-07T17:20:59.487Z","level":"info","msg":"listening","service":"yatri-trips","version":"1.0.0","port":8080,"env":"production","dataDir":"/data","apiKeyConfigured":true}
+{"ts":"2026-10-07T17:23:04.709Z","level":"info","msg":"request","service":"yatri-trips","version":"1.0.0","method":"POST","route":"/api/trips","status":201,"duration_ms":3}
+{"ts":"2026-10-07T17:23:05.262Z","level":"info","msg":"request","service":"yatri-trips","version":"1.0.0","method":"POST","route":"/api/trips","status":201,"duration_ms":1}
+
+```
+
+## 7. Ship v1.0.1 - the pipeline commits the tag, Argo CD rolls it out
+```text
+$ bash "<platform-repo>/scripts/pipeline.sh" 1.0.1 "<platform-repo>" 2>&1 | tail -12
+
+========== 7/8 Security gate ==========
+Policy : CRITICAL <= 0, HIGH <= 5 (fixable only)
+Found  : CRITICAL = 0, HIGH = 0
+SECURITY GATE: PASSED
+
+========== 8/8 Push + GitOps deploy ==========
+localhost:5000/yatri-trips:1.0.1
+{"name":"yatri-trips","tags":["1.0.0","1.0.1"]}
+
+467828a deploy: yatri-trips 1.0.1
+pushed - Argo CD will roll out 1.0.1
+
+# (webhook stand-in: ask Argo CD to re-read Git now instead of waiting for its poll)
+t+  1s  yatri-trips: sync=OutOfSync health=Healthy rev=467828a57918504e1ef683d91ecc7e8542053b5f
+t+  4s  yatri-trips: sync=Synced health=Progressing rev=467828a57918504e1ef683d91ecc7e8542053b5f
+t+ 11s  yatri-trips: sync=Synced health=Healthy rev=467828a57918504e1ef683d91ecc7e8542053b5f
+$ kubectl -n yatri rollout status deploy/yatri-trips --timeout=180s
+deployment "yatri-trips" successfully rolled out
+
+$ kubectl -n yatri get pods -l app.kubernetes.io/name=yatri-trips -o custom-columns=POD:.metadata.name,IMAGE:.spec.containers[0].image,READY:.status.containerStatuses[0].ready
+POD                           IMAGE                                           READY
+yatri-trips-c8c4f95df-9br4m   host.minikube.internal:5000/yatri-trips:1.0.1   true
+yatri-trips-c8c4f95df-klwp9   host.minikube.internal:5000/yatri-trips:1.0.1   true
+
+$ minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/
+{"service":"yatri-trips","version":"1.0.1","env":"production"}
+# trips written before the rollout are still there (PVC):
+$ minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/api/trips | python3 -c 'import json,sys; print([t["destination"] for t in json.load(sys.stdin)])' 2>/dev/null || minikube ssh -- curl -s -H 'Host:yatri-prod.local' http://localhost/api/trips
+['Jaipur', 'Leh', 'Hampi']
+
+$ git -C "<platform-repo>" log --oneline
+467828a deploy: yatri-trips 1.0.1
+94d2997 deploy: yatri-trips 1.0.0
+793f2a9 Yatri platform: app, chart, monitoring, gitops
+
+```
+
+## 8. SAST on the application (run separately - Semgrep is not on the pipeline script's PATH on this machine)
+
+$ semgrep scan --config p/javascript --config p/nodejs --config p/security-audit --config ../security/semgrep.yml --metrics=off src
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 5 files tracked by git with 295 Code rules:
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  js               84       5          Community     292                                                                
+  <multilang>       2       5          Custom          3                                                                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 0 (0 blocking)
+ • Rules run: 86
+ • Targets scanned: 5
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 86 rules on 5 files: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
+```
+
+## 9. terraform/aws - init, fmt, validate (no AWS account; LocalStack's free edition has no EKS)
+
+```text
+$ terraform init
+Initializing the backend...
+
+Initializing provider plugins...
+- Finding hashicorp/random versions matching "~> 3.6"...
+- Finding hashicorp/aws versions matching "~> 5.0"...
+- Installing hashicorp/random v3.9.1...
+- Installed hashicorp/random v3.9.1 (signed by HashiCorp)
+- Installing hashicorp/aws v5.100.0...
+- Installed hashicorp/aws v5.100.0 (signed by HashiCorp)
+
+Terraform has created a lock file .terraform.lock.hcl to record the provider
+selections it made above. Include this file in your version control repository
+so that Terraform can guarantee to make the same selections by default when
+you run "terraform init" in the future.
+
+Terraform has been successfully initialized!
+
+You may now begin working with Terraform. Try running "terraform plan" to see
+any changes that are required for your infrastructure. All Terraform commands
+should now work.
+
+If you ever set or change modules or backend configuration for Terraform,
+rerun this command to reinitialize your working directory. If you forget, other
+commands will detect it and remind you to do so if necessary.
+
+$ terraform fmt -check -recursive
+exit=0
+
+$ terraform validate
+Success! The configuration is valid.
+
+
+$ terraform providers
+
+Providers required by configuration:
+.
+├── provider[registry.terraform.io/hashicorp/random] ~> 3.6
+└── provider[registry.terraform.io/hashicorp/aws] ~> 5.0
+
+```

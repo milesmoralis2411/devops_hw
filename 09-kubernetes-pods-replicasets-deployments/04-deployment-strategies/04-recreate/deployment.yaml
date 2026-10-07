@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recreate-web
+  labels:
+    app: recreate-web
+    strategy: recreate
+spec:
+  replicas: 4
+  strategy:
+    type: Recreate        # kill every old Pod BEFORE creating any new Pod
+  selector:
+    matchLabels:
+      app: recreate-web
+  template:
+    metadata:
+      labels:
+        app: recreate-web
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

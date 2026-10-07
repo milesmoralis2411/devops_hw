@@ -1,0 +1,10 @@
+region             = "ap-south-1"
+project            = "yatri"
+environment        = "prod"
+vpc_cidr           = "10.30.0.0/16"
+kubernetes_version = "1.35"
+node_instance_type = "t3.medium"
+node_desired       = 2
+node_min           = 2
+node_max           = 4
+github_repository  = "milesmoralis2411/devops_hw"

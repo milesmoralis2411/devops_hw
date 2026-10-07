@@ -1,0 +1,82 @@
+# Hardened Deployment: the Kubernetes half of "shift left" security.
+# Every field below closes a specific attack path.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yatri-secure
+  labels: { app: yatri-secure }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: yatri-secure }
+  template:
+    metadata:
+      labels: { app: yatri-secure }
+    spec:
+      # Do not hand every Pod a usable API token by default.
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: app
+          # Rewritten by the pipeline with the digest that passed the gate.
+          image: yatri-secure:latest
+          imagePullPolicy: IfNotPresent
+
+          securityContext:
+            allowPrivilegeEscalation: false   # blocks setuid escalation
+            readOnlyRootFilesystem: true      # no writing to the image layer
+            privileged: false
+            capabilities:
+              drop: ["ALL"]                   # drop every Linux capability
+
+          ports:
+            - containerPort: 3000
+
+          env:
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: GREETING
+              value: "Hello World from the DevSecOps pipeline"
+
+          # Writable scratch space, since the root filesystem is read-only.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3000 }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # Resource limits are a security control: they bound the blast
+          # radius of a compromised or runaway container.
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: 300m, memory: 192Mi }
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yatri-secure
+spec:
+  type: ClusterIP
+  selector: { app: yatri-secure }
+  ports:
+    - port: 80
+      targetPort: 3000

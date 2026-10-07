@@ -1,0 +1,29 @@
+# Run the whole workflow locally, with no AWS account, against LocalStack:
+#
+#   docker run -d --name localstack -p 4566:4566 localstack/localstack:3.8
+#   cp localstack_override.tf.example override.tf
+#   terraform init && terraform apply
+#
+# Terraform merges any file named override.tf on top of the real config, so
+# provider.tf stays untouched. override.tf is git-ignored on purpose: delete
+# it to target real AWS again.
+provider "aws" {
+  access_key                  = "test"
+  secret_key                  = "test"
+  region                      = "ap-south-1"
+  s3_use_path_style           = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+
+  endpoints {
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+    iam = "http://localhost:4566"
+  }
+}
+
+# Also run with:  terraform apply -var enable_lifecycle_rules=false
+# LocalStack 3.8 stores lifecycle rules correctly, but aws provider 5.x's
+# post-create consistency check against it never passes and times out after
+# 3 minutes. Real AWS is unaffected - keep the default (true) there.

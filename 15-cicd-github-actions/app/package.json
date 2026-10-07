@@ -1,0 +1,15 @@
+{
+  "name": "yatri-cicd-demo",
+  "version": "1.0.0",
+  "description": "Small Express API used to demonstrate a CI/CD pipeline with GitHub Actions",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test",
+    "lint": "node --check src/server.js && node --check src/app.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

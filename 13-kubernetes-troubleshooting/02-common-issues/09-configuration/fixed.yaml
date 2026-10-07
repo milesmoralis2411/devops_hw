@@ -1,0 +1,38 @@
+# FIX: correct key name, create the missing ConfigMap, use a real command.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-settings
+data:
+  log_level: debug
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: extra-settings
+data:
+  extra.conf: |
+    retries = 3
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: config-demo-fixed
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo LOG_LEVEL=$LOG_LEVEL; cat /etc/extra/extra.conf; sleep 3600"]
+      env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: app-settings
+              key: log_level
+      volumeMounts:
+        - name: extra
+          mountPath: /etc/extra
+  volumes:
+    - name: extra
+      configMap:
+        name: extra-settings

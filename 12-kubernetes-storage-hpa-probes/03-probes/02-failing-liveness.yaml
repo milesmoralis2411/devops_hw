@@ -1,0 +1,22 @@
+# Demonstrates a liveness failure causing RESTARTS.
+# The container serves on port 80, but the probe checks /healthz which nginx
+# does not serve -> 404 -> probe fails -> kubelet restarts the container.
+# Watch RESTARTS climb with: kubectl get pod failing-liveness -w
+apiVersion: v1
+kind: Pod
+metadata:
+  name: failing-liveness
+  labels: { demo: probes, case: liveness-fail }
+spec:
+  containers:
+    - name: web
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      livenessProbe:
+        httpGet:
+          path: /healthz        # <-- nginx returns 404 here
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 2

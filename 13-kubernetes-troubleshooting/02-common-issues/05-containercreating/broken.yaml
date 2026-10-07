@@ -1,0 +1,19 @@
+# SYMPTOM: STATUS=ContainerCreating, stuck (not transient).
+# CAUSE: the Pod mounts a Secret that does not exist, so the kubelet cannot
+#        finish setting up the volume. Events show FailedMount.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: containercreating-demo
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      volumeMounts:
+        - name: tls
+          mountPath: /etc/tls
+          readOnly: true
+  volumes:
+    - name: tls
+      secret:
+        secretName: tls-certs       # <-- never created

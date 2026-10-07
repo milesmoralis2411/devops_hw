@@ -1,0 +1,17 @@
+# Trivy configuration - the scanner policy for this project.
+severity:
+  - CRITICAL
+  - HIGH
+
+# Only report vulnerabilities that actually have a fix available; an
+# unfixable CVE cannot be acted on and only trains people to ignore the gate.
+ignore-unfixed: true
+
+scan:
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+
+exit-code: 1
+timeout: 10m

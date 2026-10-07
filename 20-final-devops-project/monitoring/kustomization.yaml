@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# The monitoring namespace and the grafana-admin Secret come from
+# terraform/cluster-bootstrap; everything here is safe to keep in Git.
+resources:
+  - prometheus.yaml
+  - kube-state-metrics.yaml
+  - alertmanager.yaml
+  - grafana.yaml
+
+# Generated ConfigMaps get a content hash in their name, and kustomize rewrites
+# the Deployments to reference it. So a commit that changes a scrape config or
+# an alert rule produces a NEW ConfigMap and a rollout - Prometheus picks up
+# the change without anyone running a reload by hand.
+configMapGenerator:
+  - name: prometheus-config
+    namespace: monitoring
+    files:
+      - prometheus.yml=config/prometheus.yml
+  - name: prometheus-rules
+    namespace: monitoring
+    files:
+      - yatri.yml=config/yatri-rules.yml
+  - name: alertmanager-config
+    namespace: monitoring
+    files:
+      - alertmanager.yml=config/alertmanager.yml

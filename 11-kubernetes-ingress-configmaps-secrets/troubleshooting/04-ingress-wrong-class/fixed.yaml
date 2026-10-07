@@ -1,0 +1,18 @@
+# FIXED: use a class that exists - "kubectl get ingressclass" lists them.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ts-ingress-wrongclass
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: wrongclass.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 80

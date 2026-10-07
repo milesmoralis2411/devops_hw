@@ -1,0 +1,16 @@
+# SYMPTOM: STATUS=Pending, forever. No node is ever assigned.
+# CAUSE: the CPU/memory request exceeds anything the cluster can offer, so
+#        the scheduler has no feasible node. "kubectl describe pod" shows
+#        FailedScheduling / Insufficient cpu.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-demo
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      resources:
+        requests:
+          cpu: "64"           # no node has 64 free cores
+          memory: "128Gi"

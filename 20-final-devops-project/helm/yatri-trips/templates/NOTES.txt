@@ -1,0 +1,14 @@
+yatri-trips {{ .Values.image.tag | default .Chart.AppVersion }} is deployed as release "{{ .Release.Name }}" (revision {{ .Release.Revision }}).
+
+{{- if .Values.ingress.enabled }}
+
+  URL:  http://{{ .Values.ingress.host }}/
+  (add "$(minikube ip) {{ .Values.ingress.host }}" to your hosts file, or use
+   curl -H 'Host: {{ .Values.ingress.host }}' http://$(minikube ip)/)
+{{- end }}
+
+  API key Secret: {{ include "yatri.secretName" . }}
+  Storage:        {{ if .Values.persistence.enabled }}PVC {{ include "yatri.fullname" . }}-data ({{ .Values.persistence.size }}){{ else }}emptyDir (not persistent){{ end }}
+  Autoscaling:    {{ if .Values.autoscaling.enabled }}{{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} replicas at {{ .Values.autoscaling.targetCPUUtilizationPercentage }}% CPU{{ else }}off ({{ .Values.replicaCount }} replicas){{ end }}
+
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

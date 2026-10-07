@@ -1,0 +1,28 @@
+# FIX: make the Service selector match the Pod labels exactly.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: web-app }
+  template:
+    metadata:
+      labels: { app: web-app }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports: [{ containerPort: 80 }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-demo
+spec:
+  selector:
+    app: web-app                      # now matches
+  ports:
+    - port: 80
+      targetPort: 80

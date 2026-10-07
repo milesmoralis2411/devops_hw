@@ -1,0 +1,6 @@
+# Container image + filesystem scanning policy.
+severity: [CRITICAL, HIGH]
+ignore-unfixed: true            # only report what can actually be fixed
+scan:
+  scanners: [vuln, secret, misconfig]
+timeout: 10m

@@ -1,0 +1,57 @@
+# A healthy workload using all three probe types together.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probes-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: probes-demo }
+  template:
+    metadata:
+      labels: { app: probes-demo }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+
+          # STARTUP: gates the other two probes. Until this succeeds the
+          # liveness and readiness probes are disabled, so a slow boot is
+          # never mistaken for a hang. 30 x 2s = up to 60s of grace.
+          startupProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 2
+            failureThreshold: 30
+
+          # READINESS: decides Service endpoint membership.
+          # Failing => removed from the Service, but NOT restarted.
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+
+          # LIVENESS: decides whether the container is restarted.
+          # Failing failureThreshold times in a row => kubelet kills it.
+          livenessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits:   { cpu: 100m, memory: 64Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probes-demo
+spec:
+  selector: { app: probes-demo }
+  ports:
+    - port: 80
+      targetPort: 80

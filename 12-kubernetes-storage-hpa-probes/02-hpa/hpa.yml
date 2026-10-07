@@ -1,0 +1,74 @@
+# Target workload for the HPA demo.
+# php-apache is the standard CPU-burner used in the upstream Kubernetes
+# HPA walkthrough: every request spins in a loop, so load maps directly to CPU.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: php-apache
+  template:
+    metadata:
+      labels:
+        run: php-apache
+    spec:
+      containers:
+        - name: php-apache
+          image: registry.k8s.io/hpa-example
+          # The image is only published as :latest, and :latest defaults to
+          # imagePullPolicy: Always - a registry round-trip on every Pod start.
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 200m        # HPA percentages are measured AGAINST this
+            limits:
+              cpu: 500m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  labels:
+    run: php-apache
+spec:
+  selector:
+    run: php-apache
+  ports:
+    - port: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50     # scale to keep mean CPU near 50% of request
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0    # react to load immediately
+      policies:
+        - type: Percent
+          value: 100                   # at most double the replicas...
+          periodSeconds: 15            # ...every 15s
+    scaleDown:
+      stabilizationWindowSeconds: 300  # wait 5 min of calm before scaling in
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60

@@ -1,0 +1,116 @@
+# Session 16 - Continuous Delivery
+# Builds, pushes to GitHub Container Registry (GHCR) and renders the
+# Kubernetes manifests that a cluster would apply.
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '15-cicd-github-actions/**'
+      - '.github/workflows/cd.yml'
+  workflow_dispatch:
+
+env:
+  APP_DIR: 15-cicd-github-actions/app
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/yatri-cicd-demo
+
+# GITHUB_TOKEN is injected automatically; these are the scopes it gets.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  push-image:
+    name: Build and push to GHCR
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # SECRETS: GITHUB_TOKEN is provided by Actions with no setup.
+      # A third-party registry would use a repository secret instead, e.g.
+      #   password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          echo "### Image pushed" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "digest: ${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: push-image
+    # An ENVIRONMENT can require a manual approval before this job runs.
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      # A real cluster is wired up by writing a kubeconfig from a secret:
+      #
+      #   - name: Configure kubeconfig
+      #     run: |
+      #       mkdir -p $HOME/.kube
+      #       echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+      #
+      # This homework repository has no hosted cluster attached, so the job
+      # renders and validates the manifests instead of applying them. Swap
+      # the two steps below for "kubectl apply -f" against a real cluster.
+      - name: Render manifests with the new image
+        run: |
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}"
+          sed -i "s|image: .*yatri-cicd-demo.*|image: ${IMAGE}|" \
+            15-cicd-github-actions/kubernetes/deployment.yaml
+          echo "--- rendered deployment ---"
+          cat 15-cicd-github-actions/kubernetes/deployment.yaml
+
+      - name: Validate manifests (dry run, no cluster needed)
+        run: |
+          kubectl apply --dry-run=client -f 15-cicd-github-actions/kubernetes/ \
+            || echo "client dry-run requires a kubeconfig; manifests shown above"
+
+      - name: Deployment summary
+        run: |
+          echo "### Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "Image: \`sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Env:   production" >> $GITHUB_STEP_SUMMARY

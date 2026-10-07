@@ -1,0 +1,30 @@
+# Same Application shape as application.yaml, but the source is the in-cluster
+# Gitea repository the demo pushes commits to.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yatri-gitops
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://gitea.gitea.svc.cluster.local:3000/yatri/gitops-demo.git
+    targetRevision: main
+    path: manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: yatri-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    # A bad commit fails fast (3 attempts within ~20s) instead of retrying
+    # for minutes and holding up the fix that follows it.
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 20s

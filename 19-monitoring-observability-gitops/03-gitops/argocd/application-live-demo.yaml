@@ -1,0 +1,22 @@
+# Used for the live demo: tracks a path that is already pushed to GitHub, so
+# Argo CD has real Git content to reconcile against.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-gitops-demo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/milesmoralis2411/devops_hw.git
+    targetRevision: main
+    path: 09-kubernetes-pods-replicasets-deployments/03-deployment
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-demo
+  syncPolicy:
+    automated:
+      prune: true        # delete objects that were removed from Git
+      selfHeal: true     # undo changes made to the cluster by hand
+    syncOptions:
+      - CreateNamespace=true

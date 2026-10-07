@@ -1,0 +1,18 @@
+# Secret scanning policy for the final project.
+title = "yatri gitleaks config"
+
+[extend]
+useDefault = true          # all built-in rules (AWS keys, GitHub tokens, private keys, ...)
+
+# A project-specific rule: our own API key format, if one is ever pasted somewhere.
+[[rules]]
+id = "yatri-api-key"
+description = "Yatri Trips API key assignment"
+regex = '''(?i)(api[_-]?key)\s*[:=]\s*["']?([a-z0-9]{32,})["']?'''
+secretGroup = 2
+keywords = ["api_key", "api-key", "apikey"]
+
+[allowlist]
+description = "Documented placeholders"
+regexes = ['''REPLACE_ME''', '''local-dev-key''', '''test-key-123''']
+paths = ['''(^|/)application/test/''']

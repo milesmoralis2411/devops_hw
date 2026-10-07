@@ -1,0 +1,47 @@
+# Local development: the API plus Prometheus scraping it.
+#   docker compose -f docker/docker-compose.yml up --build
+#   curl localhost:8080/            -> service info
+#   open  localhost:9090            -> Prometheus
+services:
+  api:
+    build:
+      context: ../application
+      dockerfile: ../docker/Dockerfile
+    image: yatri-trips:dev
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: debug
+      API_KEY: ${API_KEY:-local-dev-key}
+    volumes:
+      - trips-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports:
+      - "9090:9090"
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    configs:
+      - source: prometheus
+        target: /etc/prometheus/prometheus.yml
+    depends_on:
+      - api
+
+configs:
+  prometheus:
+    content: |
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: yatri-trips
+          static_configs:
+            - targets: ["api:8080"]
+
+volumes:
+  trips-data:

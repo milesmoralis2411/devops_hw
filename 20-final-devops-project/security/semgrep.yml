@@ -1,0 +1,27 @@
+# Project-specific SAST rules, run alongside the public rule packs
+# (p/javascript, p/nodejs, p/security-audit).
+rules:
+  - id: yatri-no-eval
+    languages: [javascript]
+    severity: ERROR
+    message: "eval/new Function executes arbitrary code - never use it on request data"
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+
+  - id: yatri-no-child-process
+    languages: [javascript]
+    severity: ERROR
+    message: "The API has no reason to spawn processes; child_process in src/ is a red flag"
+    paths:
+      include: ["src/"]
+    pattern-either:
+      - pattern: require('child_process')
+      - pattern: require("child_process")
+
+  - id: yatri-timing-safe-key-compare
+    languages: [javascript]
+    severity: WARNING
+    message: "Compare secrets with crypto.timingSafeEqual, not ===, to avoid timing attacks"
+    patterns:
+      - pattern: $A === config.apiKey

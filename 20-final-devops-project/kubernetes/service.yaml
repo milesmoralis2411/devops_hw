@@ -1,0 +1,23 @@
+# Rendered from helm/yatri-trips with values-prod.yaml:
+#   helm template yatri-trips helm/yatri-trips -n yatri -f helm/yatri-trips/values-prod.yaml --skip-tests
+# Plain manifests for kubectl/kustomize users. Edit the chart, then re-render.
+apiVersion: v1
+kind: Service
+metadata:
+  name: yatri-trips
+  labels:
+    helm.sh/chart: yatri-trips-1.0.0
+    app.kubernetes.io/name: yatri-trips
+    app.kubernetes.io/instance: yatri-trips
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: yatri
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: yatri-trips
+    app.kubernetes.io/instance: yatri-trips
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

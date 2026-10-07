@@ -1,0 +1,30 @@
+# The two non-HTTP probe handlers.
+#   exec      - runs a command inside the container; exit 0 = healthy
+#   tcpSocket - just opens a TCP connection; useful for non-HTTP services
+apiVersion: v1
+kind: Pod
+metadata:
+  name: probe-handlers
+  labels: { demo: probes, case: handlers }
+spec:
+  containers:
+    - name: exec-probe
+      image: busybox:1.36
+      # creates /tmp/healthy, deletes it after 30s -> liveness then fails
+      command: ["/bin/sh", "-c", "touch /tmp/healthy; sleep 30; rm -f /tmp/healthy; sleep 3600"]
+      livenessProbe:
+        exec:
+          command: ["cat", "/tmp/healthy"]
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 2
+
+    - name: tcp-probe
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      readinessProbe:
+        tcpSocket:
+          port: 80
+        initialDelaySeconds: 3
+        periodSeconds: 5

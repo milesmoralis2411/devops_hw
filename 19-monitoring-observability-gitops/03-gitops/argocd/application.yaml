@@ -1,0 +1,31 @@
+# The GitOps Application for this session's own manifests (manifests/).
+# Once this folder is pushed, every commit that changes manifests/ on main is
+# rolled out automatically - no kubectl apply, no CI credentials to the cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yatri-gitops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # deleting the App deletes its resources
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/milesmoralis2411/devops_hw.git
+    targetRevision: main
+    path: 19-monitoring-observability-gitops/03-gitops/manifests
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: yatri-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,12 @@
+# FIX: request something the cluster can actually satisfy.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-demo-fixed
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      resources:
+        requests: { cpu: 50m, memory: 64Mi }
+        limits:   { cpu: 200m, memory: 128Mi }

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bg-web
+  labels:
+    app: bg-web
+spec:
+  type: ClusterIP
+  # The switch happens HERE. Change version: blue -> version: green and
+  # 100% of traffic moves to the green Deployment instantly.
+  selector:
+    app: bg-web
+    version: blue
+  ports:
+    - port: 80
+      targetPort: 80

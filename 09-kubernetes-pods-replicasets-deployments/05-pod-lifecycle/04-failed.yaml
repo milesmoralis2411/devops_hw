@@ -1,0 +1,14 @@
+# PHASE: Failed
+# Container exits non-zero. restartPolicy: Never means no retry, so the Pod
+# lands in the terminal phase Failed.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-failed
+  labels: { demo: pod-lifecycle, phase: failed }
+spec:
+  restartPolicy: Never
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo 'about to fail'; sleep 3; exit 1"]

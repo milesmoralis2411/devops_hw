@@ -1,0 +1,17 @@
+apiVersion: v2
+name: yatri-app
+description: A Helm chart demonstrating templating, upgrades and rollbacks
+type: application
+
+# Chart version - bump when the TEMPLATES change.
+version: 0.1.0
+
+# Application version - bump when the APP image changes.
+appVersion: "1.25-alpine"
+
+keywords:
+  - demo
+  - devops
+  - homework
+maintainers:
+  - name: Varun Mundada

@@ -1,0 +1,107 @@
+# Default values for yatri-app.
+# Every value here can be overridden with --set or -f myvalues.yaml, which is
+# the whole point of the chart: one template, many environments.
+
+replicaCount: 2
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  # Overrides the image tag, which otherwise defaults to .Chart.AppVersion.
+  # The upgrade/rollback demo drives this value.
+  tag: "1.25-alpine"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 101
+
+# The stock nginx image starts its master process as root, then needs CHOWN
+# (cache dirs) and SETUID/SETGID (drop to the nginx user). Dropping ALL
+# capabilities without adding these back crash-loops nginx with
+# "chown(/var/cache/nginx/client_temp) failed (Operation not permitted)".
+# A fully non-root alternative is the nginxinc/nginx-unprivileged image.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: yatri-helm.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Non-sensitive configuration, rendered into a ConfigMap and injected as env.
+config:
+  APP_NAME: "Yatri App"
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
+  GREETING: "Hello from Helm"
+
+# Sensitive values, rendered into a Secret.
+# In a real project these come from --set, a values file kept out of Git, or
+# an external secret store - never committed like this.
+secrets:
+  API_TOKEN: "demo-token-change-me"
+  DB_PASSWORD: "demo-password-change-me"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 2
+  periodSeconds: 5
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

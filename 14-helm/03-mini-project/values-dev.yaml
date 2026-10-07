@@ -1,0 +1,14 @@
+# Development overlay: one replica, debug logging, no autoscaling, no ingress.
+replicaCount: 1
+
+config:
+  APP_NAME: "Yatri App"
+  APP_ENV: "development"
+  LOG_LEVEL: "debug"
+  GREETING: "Hello from Helm - DEV"
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: false

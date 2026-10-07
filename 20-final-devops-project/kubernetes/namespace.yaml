@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yatri
+  labels:
+    app.kubernetes.io/part-of: yatri
+    pod-security.kubernetes.io/enforce: restricted   # block privileged Pods in this namespace

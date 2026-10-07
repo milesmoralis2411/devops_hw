@@ -1,0 +1,19 @@
+# The same root Application for the real GitHub monorepo, once it is pushed.
+# Only repoURL and the folder prefix differ from root-app.yaml; the child
+# Applications in apps/ would need the same two changes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: yatri-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/milesmoralis2411/devops_hw.git
+    targetRevision: main
+    path: 20-final-devops-project/gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

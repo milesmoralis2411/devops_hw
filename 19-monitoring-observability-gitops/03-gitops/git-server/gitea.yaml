@@ -1,0 +1,69 @@
+# A tiny in-cluster Git server (Gitea) for the lab.
+#
+# GitOps needs a Git remote that the cluster can pull from AND that we can push
+# commits to during the demo. Rather than pushing practice commits to the real
+# GitHub repository, the demo pushes to this server; Argo CD watches it exactly
+# as it would watch GitHub.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitea
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+  labels: { app: gitea }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: gitea }
+  template:
+    metadata:
+      labels: { app: gitea }
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: gitea
+          image: gitea/gitea:1.27.3-rootless
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - { name: GITEA__security__INSTALL_LOCK, value: "true" }          # skip the web installer
+            - { name: GITEA__database__DB_TYPE, value: "sqlite3" }
+            - { name: GITEA__server__ROOT_URL, value: "http://gitea.gitea.svc.cluster.local:3000/" }
+            - { name: GITEA__server__HTTP_PORT, value: "3000" }
+            - { name: GITEA__service__DISABLE_REGISTRATION, value: "true" }
+            - { name: GITEA__repository__ENABLE_PUSH_CREATE_USER, value: "true" }   # git push creates the repo
+            - { name: GITEA__repository__DEFAULT_PUSH_CREATE_PRIVATE, value: "false" }
+          readinessProbe:
+            httpGet: { path: /api/healthz, port: http }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/gitea
+            - name: config
+              mountPath: /etc/gitea
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  selector: { app: gitea }
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

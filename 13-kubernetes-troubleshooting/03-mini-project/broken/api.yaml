@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shop-api-conf
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      location = /healthz      { default_type text/plain;       return 200 "ok\n"; }
+      location = /api/products { default_type application/json; return 200 '[{"id":1,"name":"Masala Chai","price":20},{"id":2,"name":"Samosa","price":15}]\n'; }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-api
+  labels: { app: shop-api }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: shop-api }
+  template:
+    metadata:
+      labels: { app: shop-api }
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health            # BUG: the app serves /healthz
+              port: 8080
+            periodSeconds: 5
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+          resources:
+            requests: { cpu: 20m, memory: 16Mi }
+            limits:   { cpu: 100m, memory: 64Mi }
+      volumes:
+        - name: conf
+          configMap:
+            name: shop-api-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-svc
+spec:
+  selector: { app: shop-api }
+  ports:
+    - port: 8080
+      targetPort: 80                    # BUG: the container listens on 8080

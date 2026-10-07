@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yatri-gitops
+  labels: { app: yatri-gitops }
+spec:
+  replicas: 2              # change this in Git -> Argo CD scales the cluster
+  selector:
+    matchLabels: { app: yatri-gitops }
+  template:
+    metadata:
+      labels: { app: yatri-gitops }
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+          volumeMounts:
+            - name: content
+              mountPath: /usr/share/nginx/html
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits:   { cpu: 100m, memory: 64Mi }
+      volumes:
+        - name: content
+          configMap:
+            name: yatri-gitops-content

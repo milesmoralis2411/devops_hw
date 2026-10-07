@@ -1,0 +1,12 @@
+# A second, equally common cause of Pending: a nodeSelector that matches
+# no node. describe shows "didn't match Pod's node affinity/selector".
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-nodeselector
+spec:
+  nodeSelector:
+    disktype: nvme-that-does-not-exist
+  containers:
+    - name: app
+      image: nginx:1.25-alpine

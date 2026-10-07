@@ -1,0 +1,16 @@
+# PHASE: Pending
+# The scheduler cannot place this Pod because no node has 100 CPUs free.
+# It is accepted by the API server but never bound to a node.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-pending
+  labels: { demo: pod-lifecycle, phase: pending }
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      resources:
+        requests:
+          cpu: "100"          # deliberately impossible
+          memory: "256Gi"

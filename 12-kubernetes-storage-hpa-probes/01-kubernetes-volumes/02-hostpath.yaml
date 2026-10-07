@@ -1,0 +1,21 @@
+# hostPath: read a directory from the NODE filesystem.
+# Legitimate for node agents; wrong for application data.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-demo
+  labels: { demo: volumes, type: hostpath }
+spec:
+  containers:
+    - name: reader
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "ls -la /host-tmp; sleep 3600"]
+      volumeMounts:
+        - name: host-tmp
+          mountPath: /host-tmp
+          readOnly: true
+  volumes:
+    - name: host-tmp
+      hostPath:
+        path: /tmp
+        type: Directory

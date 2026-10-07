@@ -1,0 +1,25 @@
+# FIXED: create the ConfigMap first, then the Pod resolves its env var.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  environment: production
+  log_level: info
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ts-missing-configmap-fixed
+  labels: { demo: troubleshooting, case: "01" }
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["/bin/sh", "-c", "echo APP_ENV=$APP_ENV; sleep 3600"]
+      env:
+        - name: APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: environment

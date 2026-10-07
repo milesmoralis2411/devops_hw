@@ -1,0 +1,21 @@
+# Demonstrates a readiness failure WITHOUT restarts.
+# The Pod stays Running with READY 0/1, is removed from the Service
+# endpoints, and is never killed. Compare RESTARTS against 02.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: failing-readiness
+  labels: { demo: probes, app: probes-demo, case: readiness-fail }
+spec:
+  containers:
+    - name: web
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /not-ready      # <-- 404 forever
+          port: 80
+        initialDelaySeconds: 3
+        periodSeconds: 5
+        failureThreshold: 2

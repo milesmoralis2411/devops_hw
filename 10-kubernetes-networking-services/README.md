@@ -57,6 +57,25 @@ in the StatefulSet, allowing clients to reach a specific Pod directly.
 
 ![Headless Service DNS results and direct Pod response](05-headless/headless-service_24bcs10326.png)
 
+## Task 2 — Kubernetes object comparison
+
+[comparisons/README.md](comparisons/README.md) covers Deployment vs
+ReplicaSet, Deployment vs DaemonSet vs StatefulSet, and ReplicaSet vs Service.
+
+## Task 3 — FQDN
+
+[fqdn/README.md](fqdn/README.md) covers what an FQDN is, Service DNS records,
+the naming convention, namespace-based resolution and Pod-to-Service traffic.
+It includes live verification on the cluster.
+
+## Task 4 — CoreDNS
+
+[coredns/README.md](coredns/README.md) covers what CoreDNS is, why Kubernetes
+uses it, service discovery, query resolution, the Corefile, and a
+troubleshooting playbook. It also shows the live Corefile and query log.
+
+The raw DNS output for Tasks 3 and 4 is in [DNS-EVIDENCE.md](DNS-EVIDENCE.md).
+
 ## Takeaway
 
 Use ClusterIP for internal applications, NodePort for simple node-level exposure,

@@ -1,0 +1,105 @@
+# Rendered from helm/yatri-trips with values-prod.yaml:
+#   helm template yatri-trips helm/yatri-trips -n yatri -f helm/yatri-trips/values-prod.yaml --skip-tests
+# Plain manifests for kubectl/kustomize users. Edit the chart, then re-render.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yatri-trips
+  labels:
+    helm.sh/chart: yatri-trips-1.0.0
+    app.kubernetes.io/name: yatri-trips
+    app.kubernetes.io/instance: yatri-trips
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: yatri
+spec:
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: yatri-trips
+      app.kubernetes.io/instance: yatri-trips
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: yatri-trips
+        app.kubernetes.io/instance: yatri-trips
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        # Roll the Pods whenever the configuration changes.
+        checksum/config: 06b020a4d46e6abe547ab876161926cb2d3da1217e947aecbb0fff83a46e4ce4
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: "host.minikube.internal:5000/yatri-trips:1.0.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: DATA_DIR
+              value: /data
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yatri-trips-secret
+                  key: API_KEY
+          envFrom:
+            - configMapRef:
+                name: yatri-trips-config
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 96Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: yatri-trips-data
+        - name: tmp
+          emptyDir: {}

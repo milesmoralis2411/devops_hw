@@ -1,0 +1,175 @@
+# Grafana with the Prometheus datasource and a dashboard provisioned from
+# ConfigMaps, so the whole monitoring setup is declarative - no clicking.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        uid: prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus.monitoring.svc:9090
+        isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        folder: Homework
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: monitoring
+data:
+  metrics-app.json: |
+    {
+      "uid": "metrics-app",
+      "title": "metrics-app - Service Health",
+      "timezone": "browser",
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "schemaVersion": 39,
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Ready replicas",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "kube_deployment_status_replicas_available{namespace=\"monitoring\",deployment=\"metrics-app\"}" }]
+        },
+        {
+          "id": 2, "type": "stat", "title": "Targets up",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(up{app=\"metrics-app\"})" }]
+        },
+        {
+          "id": 3, "type": "stat", "title": "Error ratio (1m)",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(rate(http_requests_total{app=\"metrics-app\",status=~\"5..\"}[1m])) / sum(rate(http_requests_total{app=\"metrics-app\"}[1m]))" }]
+        },
+        {
+          "id": 4, "type": "stat", "title": "Container restarts",
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"monitoring\",pod=~\"metrics-app.*\"})" }]
+        },
+        {
+          "id": 5, "type": "timeseries", "title": "Request rate by route and status",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (route, status) (rate(http_requests_total{app=\"metrics-app\"}[1m]))", "legendFormat": "{{route}} {{status}}" }]
+        },
+        {
+          "id": 6, "type": "timeseries", "title": "Latency p50 / p95",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{app=\"metrics-app\"}[1m])))", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{app=\"metrics-app\"}[1m])))", "legendFormat": "p95" }
+          ]
+        },
+        {
+          "id": 7, "type": "timeseries", "title": "CPU utilisation per Pod (cores)",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"monitoring\",pod=~\"metrics-app.*\",container!=\"\"}[1m]))", "legendFormat": "{{pod}}" }]
+        },
+        {
+          "id": 8, "type": "timeseries", "title": "Memory working set per Pod",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"monitoring\",pod=~\"metrics-app.*\",container!=\"\"})", "legendFormat": "{{pod}}" }]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels: { app: grafana }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: grafana }
+  template:
+    metadata:
+      labels: { app: grafana }
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.3.0
+          env:
+            # Demo only: anonymous viewer access so the dashboard opens
+            # without a login. Never do this on a reachable instance.
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: "Viewer"
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-admin
+                  key: password
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits:   { cpu: 300m, memory: 256Mi }
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboards
+          configMap:
+            name: grafana-dashboards
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  type: NodePort
+  selector: { app: grafana }
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      nodePort: 30300

@@ -1,0 +1,12 @@
+# SYMPTOM: STATUS=ErrImagePull -> ImagePullBackOff
+# CAUSE: the repository itself does not exist (or is private with no
+#        imagePullSecret). Distinct from 02, where the repo exists but the
+#        tag does not.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: errimage-demo
+spec:
+  containers:
+    - name: app
+      image: ghcr.io/no-such-org-24bcs10326/no-such-image:v1

@@ -1,0 +1,25 @@
+# Gitleaks configuration for this repository.
+title = "devops-hw gitleaks config"
+
+[extend]
+# Start from the built-in rule set, then narrow it below.
+useDefault = true
+
+[allowlist]
+description = "Known-safe placeholders used in the homework manifests"
+
+paths = [
+  '''.*\.md$''',
+  '''.*/troubleshooting/.*\.yaml$''',
+]
+
+regexes = [
+  '''demo-token-change-me''',
+  '''demo-password-change-me''',
+  '''demo-token-not-a-real-secret''',
+  '''s3cret-demo-only''',
+  '''demo-cert-placeholder''',
+  '''demo-key-placeholder''',
+  '''changeme''',
+  '''REPLACE_ME''',
+]

@@ -1,0 +1,26 @@
+# BROKEN: ingressClassName names a class that no controller in this cluster
+# implements (copy-pasted from a cluster that runs Traefik).
+# Symptom: ADDRESS stays empty forever and requests for the host get 404 -
+# the object is valid, it is just unowned.
+#
+# Note: simply OMITTING ingressClassName is NOT a bug on minikube - its nginx
+# IngressClass is marked default and the controller runs with
+# --watch-ingress-without-class=true, so class-less Ingresses are adopted.
+# On clusters without those safety nets, omitting the class fails the same way.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ts-ingress-wrongclass
+spec:
+  ingressClassName: traefik         # <-- no such IngressClass here
+  rules:
+    - host: wrongclass.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 80

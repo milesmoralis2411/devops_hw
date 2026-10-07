@@ -1,0 +1,108 @@
+# Session 16 - Continuous Integration
+# Trigger: every push and PR that touches the demo application.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '15-cicd-github-actions/app/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - '15-cicd-github-actions/app/**'
+  workflow_dispatch:        # lets you run it by hand from the Actions tab
+
+env:
+  APP_DIR: 15-cicd-github-actions/app
+
+jobs:
+  # ---------------------------------------------------------------- JOB 1
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest          # the RUNNER: a fresh VM per job
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]      # same steps, two Node versions, in parallel
+
+    steps:                          # STEPS run sequentially inside the job
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Syntax check
+        working-directory: ${{ env.APP_DIR }}
+        run: npm run lint
+
+      - name: Run unit tests
+        working-directory: ${{ env.APP_DIR }}
+        run: npm test
+
+      - name: Produce a test report
+        if: always()                # run even when the tests failed
+        working-directory: ${{ env.APP_DIR }}
+        run: npm test -- --test-reporter=tap > test-results.tap || true
+
+      - name: Upload test results as an ARTIFACT
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-node${{ matrix.node-version }}
+          path: ${{ env.APP_DIR }}/test-results.tap
+          retention-days: 7
+
+  # ---------------------------------------------------------------- JOB 2
+  docker-build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: build-and-test           # DEPENDENCY: only runs if tests passed
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build the image (no push on CI)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.APP_DIR }}
+          push: false
+          load: true
+          tags: yatri-cicd-demo:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke-test the built image
+        run: |
+          docker run -d --name smoke -p 3000:3000 yatri-cicd-demo:${{ github.sha }}
+          # wait for the container to accept connections
+          for i in $(seq 1 15); do
+            if curl -fsS http://localhost:3000/healthz; then break; fi
+            sleep 2
+          done
+          echo
+          echo "--- GET / ---"
+          curl -fsS http://localhost:3000/
+          echo
+          echo "--- GET /sum?a=20&b=22 ---"
+          curl -fsS "http://localhost:3000/sum?a=20&b=22"
+          echo
+          docker rm -f smoke
+
+      - name: Save the image as an artifact
+        run: docker save yatri-cicd-demo:${{ github.sha }} | gzip > image.tar.gz
+
+      - name: Upload the image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar.gz
+          retention-days: 3

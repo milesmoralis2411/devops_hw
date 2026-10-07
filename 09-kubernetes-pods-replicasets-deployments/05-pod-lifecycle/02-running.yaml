@@ -1,0 +1,16 @@
+# PHASE: Running
+# The normal happy path: scheduled -> image pulled -> container started.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-running
+  labels: { demo: pod-lifecycle, phase: running }
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits:   { cpu: 100m, memory: 64Mi }

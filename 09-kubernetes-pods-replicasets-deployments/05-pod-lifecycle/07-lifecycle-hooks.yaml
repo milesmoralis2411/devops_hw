@@ -1,0 +1,29 @@
+# LIFECYCLE HOOKS
+# postStart fires immediately after the container is created (no ordering
+# guarantee against the entrypoint). preStop fires before SIGTERM is sent,
+# and Kubernetes waits for it within terminationGracePeriodSeconds.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-hooks
+  labels: { demo: pod-lifecycle, phase: hooks }
+spec:
+  terminationGracePeriodSeconds: 30
+  containers:
+    - name: app
+      image: nginx:1.25-alpine
+      lifecycle:
+        postStart:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - 'echo "postStart hook ran at $(date)" > /usr/share/nginx/html/hook.txt'
+        preStop:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - 'echo preStop-draining; sleep 10; nginx -s quit'
+      ports:
+        - containerPort: 80

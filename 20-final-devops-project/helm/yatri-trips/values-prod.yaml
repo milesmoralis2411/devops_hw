@@ -1,0 +1,29 @@
+# Production values, layered on values.yaml by the Argo CD Application.
+# image.tag is written by the CI pipeline (scripts/pipeline.sh) - a commit to
+# this line IS the deployment.
+image:
+  repository: host.minikube.internal:5000/yatri-trips   # lab registry; ECR URL on AWS
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+config:
+  APP_ENV: production
+  LOG_LEVEL: info
+  MAX_TRIPS: "5000"
+
+ingress:
+  host: yatri-prod.local
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

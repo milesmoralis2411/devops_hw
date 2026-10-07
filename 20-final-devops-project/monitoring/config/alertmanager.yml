@@ -1,0 +1,17 @@
+route:
+  receiver: alert-log
+  group_by: [alertname, severity]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    - matchers: [team="security"]
+      receiver: alert-log          # in prod: the security on-call
+    - matchers: [severity="critical"]
+      receiver: alert-log          # in prod: PagerDuty
+      repeat_interval: 15m
+receivers:
+  - name: alert-log
+    webhook_configs:
+      - url: http://alert-log.monitoring.svc/
+        send_resolved: true

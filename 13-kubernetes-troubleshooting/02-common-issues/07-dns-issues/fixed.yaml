@@ -1,0 +1,14 @@
+# FIX: qualify the name with the namespace (or the full FQDN).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-client-fixed
+  namespace: default
+spec:
+  containers:
+    - name: client
+      image: busybox:1.36
+      command:
+        - /bin/sh
+        - -c
+        - "nslookup backend.backend-ns.svc.cluster.local; sleep 3600"
