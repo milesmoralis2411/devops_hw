@@ -389,6 +389,16 @@ The Prometheus config and rules come from kustomize's `configMapGenerator`.
 Each change produces a new hashed ConfigMap name, so **a Git commit that
 edits an alert rule rolls Prometheus automatically** — no manual reload.
 
+### Logs
+
+The API writes **structured JSON logs**, one object per line, to stdout: what
+`kubectl logs` reads, and what any log collector (Loki, Fluent Bit, CloudWatch)
+would ship. Each line carries the route template, status and duration, so the
+logs can be filtered by field rather than by text, and the API key is never
+logged.
+
+![Logs: JSON lines per request, filtered by status, the API key never logged](screenshots/live-logs-structured-json-one-object-per-line_24bcs10326.png)
+
 ## 12. GitOps
 
 ```text
