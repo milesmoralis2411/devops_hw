@@ -1,0 +1,28 @@
+# Run this configuration against LocalStack instead of AWS - no account needed:
+#
+#   docker run -d --name localstack -p 4566:4566 localstack/localstack:3.8
+#   cp localstack_override.tf.example override.tf
+#   terraform init && terraform plan
+#
+# LocalStack's free (community) edition emulates VPC/EC2, S3, KMS, IAM and STS
+# but not EKS or ECR, so everything except those is applied with -target (the
+# exact command is in ../../README.md). Terraform merges override.tf on top of
+# versions.tf; it is git-ignored, so delete it to target real AWS again.
+provider "aws" {
+  access_key                  = "test"
+  secret_key                  = "test"
+  s3_use_path_style           = true
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+
+  endpoints {
+    ec2 = "http://localhost:4566"
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+    iam = "http://localhost:4566"
+    kms = "http://localhost:4566"
+    ecr = "http://localhost:4566"
+    eks = "http://localhost:4566"
+  }
+}

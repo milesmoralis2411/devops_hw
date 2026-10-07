@@ -204,8 +204,15 @@ What the run shows:
 ### Try the full commit → sync loop yourself
 
 The live run used a path already on GitHub, so it could demonstrate syncing
-and every kind of drift correction without a push. Once this folder is pushed,
-the whole loop works:
+and every kind of drift correction without a push. After this folder was
+pushed, [argocd/application.yaml](argocd/application.yaml) was applied, and
+Argo CD synced [`manifests/`](manifests/) **straight from GitHub**:
+Synced / Healthy at the pushed commit, with a ConfigMap, a Service, and a
+Deployment with 2 Pods.
+
+![Argo CD: yatri-gitops synced from GitHub](argocd-yatri-gitops-from-github_24bcs10326.png)
+
+The commit → sync loop from here:
 
 ```bash
 kubectl apply -f argocd/application.yaml          # Argo CD now watches manifests/

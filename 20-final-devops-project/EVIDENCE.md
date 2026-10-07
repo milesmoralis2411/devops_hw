@@ -834,3 +834,207 @@ yatri-root: sync=Synced health=Healthy
 yatri-monitoring: sync=Synced health=Healthy
 yatri-trips: sync=Synced health=Healthy
 ```
+
+## 11. terraform/aws against LocalStack - plan everything, apply what it emulates
+
+No AWS account is available, so the configuration was run against LocalStack
+3.8.1 using [`localstack_override.tf.example`](terraform/aws/localstack_override.tf.example).
+
+```text
+$ curl -s localhost:4566/_localstack/health   (services this configuration uses)
+  LocalStack 3.8.1 community
+  ec2  available
+  s3   available
+  iam  available
+  sts  available
+  kms  available
+  ecr  not in this edition
+  eks  not in this edition
+
+$ cp localstack_override.tf.example override.tf
+
+$ terraform init -input=false -no-color | grep -E 'Initializing provider|Using previously|successfully initialized'
+Initializing provider plugins...
+- Using previously-installed hashicorp/random v3.9.1
+- Using previously-installed hashicorp/aws v5.100.0
+Terraform has been successfully initialized!
+
+```
+
+### Plan - the whole configuration
+
+```text
+$ terraform plan -input=false -no-color -out=full.tfplan | grep -E '^  # |^Plan:'
+  # data.aws_iam_policy_document.ci_push will be read during apply
+  # (config refers to values not yet known)
+  # data.aws_iam_policy_document.github_assume will be read during apply
+  # (config refers to values not yet known)
+  # aws_ecr_lifecycle_policy.app will be created
+  # aws_ecr_repository.app will be created
+  # aws_eip.nat will be created
+  # aws_eks_cluster.this will be created
+  # aws_eks_node_group.default will be created
+  # aws_iam_openid_connect_provider.github will be created
+  # aws_iam_role.cluster will be created
+  # aws_iam_role.github_ci will be created
+  # aws_iam_role.node will be created
+  # aws_iam_role_policy.ci_push will be created
+  # aws_iam_role_policy_attachment.cluster will be created
+  # aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"] will be created
+  # aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"] will be created
+  # aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"] will be created
+  # aws_internet_gateway.this will be created
+  # aws_kms_key.backups will be created
+  # aws_kms_key.eks will be created
+  # aws_nat_gateway.this will be created
+  # aws_route_table.private will be created
+  # aws_route_table.public will be created
+  # aws_route_table_association.private[0] will be created
+  # aws_route_table_association.private[1] will be created
+  # aws_route_table_association.public[0] will be created
+  # aws_route_table_association.public[1] will be created
+  # aws_s3_bucket.backups will be created
+  # aws_s3_bucket_public_access_block.backups will be created
+  # aws_s3_bucket_server_side_encryption_configuration.backups will be created
+  # aws_s3_bucket_versioning.backups will be created
+  # aws_subnet.private[0] will be created
+  # aws_subnet.private[1] will be created
+  # aws_subnet.public[0] will be created
+  # aws_subnet.public[1] will be created
+  # aws_vpc.this will be created
+  # random_id.suffix will be created
+Plan: 34 to add, 0 to change, 0 to destroy.
+
+```
+
+### Apply - everything except EKS and ECR
+
+```text
+$ terraform apply -input=false -no-color -auto-approve $TARGETS 2>&1 | grep -E 'Creation complete|^Apply complete|^Error'
+random_id.suffix: Creation complete after 0s [id=Q9oUpA]
+aws_eip.nat: Creation complete after 0s [id=eipalloc-02f9d94a]
+aws_iam_openid_connect_provider.github: Creation complete after 1s [id=arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com]
+aws_iam_role.node: Creation complete after 1s [id=yatri-prod-eks-node]
+aws_iam_role.cluster: Creation complete after 1s [id=yatri-prod-eks-cluster]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"]: Creation complete after 0s [id=yatri-prod-eks-node-20261007180210870900000002]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]: Creation complete after 0s [id=yatri-prod-eks-node-20261007180210882400000004]
+aws_iam_role_policy_attachment.cluster: Creation complete after 0s [id=yatri-prod-eks-cluster-20261007180210876500000003]
+aws_iam_role.github_ci: Creation complete after 0s [id=yatri-prod-github-ci]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"]: Creation complete after 0s [id=yatri-prod-eks-node-20261007180210860800000001]
+aws_s3_bucket.backups: Creation complete after 2s [id=yatri-prod-backups-43da14a4]
+aws_s3_bucket_public_access_block.backups: Creation complete after 0s [id=yatri-prod-backups-43da14a4]
+aws_s3_bucket_versioning.backups: Creation complete after 1s [id=yatri-prod-backups-43da14a4]
+aws_kms_key.backups: Creation complete after 10s [id=15f4f46e-f2c4-41e1-95c3-3601d787bfe2]
+aws_kms_key.eks: Creation complete after 10s [id=31ec43cd-a0f4-46dd-8e8e-b2e9cd64dcf6]
+aws_s3_bucket_server_side_encryption_configuration.backups: Creation complete after 0s [id=yatri-prod-backups-43da14a4]
+aws_vpc.this: Creation complete after 11s [id=vpc-990d72e0]
+aws_subnet.private[0]: Creation complete after 0s [id=subnet-6fb0a41f]
+aws_subnet.public[1]: Creation complete after 0s [id=subnet-e81d3945]
+aws_subnet.public[0]: Creation complete after 0s [id=subnet-e5cfda26]
+aws_subnet.private[1]: Creation complete after 0s [id=subnet-20e9e390]
+aws_internet_gateway.this: Creation complete after 0s [id=igw-b6a8dc62]
+aws_nat_gateway.this: Creation complete after 1s [id=nat-1b494e3f923d23ab4]
+aws_route_table.public: Creation complete after 1s [id=rtb-07ea2e86]
+aws_route_table_association.public[0]: Creation complete after 0s [id=rtbassoc-74077743]
+aws_route_table_association.public[1]: Creation complete after 0s [id=rtbassoc-227fdf73]
+aws_route_table.private: Creation complete after 0s [id=rtb-16edc7f7]
+aws_route_table_association.private[0]: Creation complete after 0s [id=rtbassoc-aaf60eba]
+aws_route_table_association.private[1]: Creation complete after 0s [id=rtbassoc-bb5b80bf]
+Apply complete! Resources: 29 added, 0 changed, 0 destroyed.
+
+$ terraform state list
+data.aws_availability_zones.available
+data.aws_iam_policy_document.eks_assume
+data.aws_iam_policy_document.github_assume
+data.aws_iam_policy_document.node_assume
+aws_eip.nat
+aws_iam_openid_connect_provider.github
+aws_iam_role.cluster
+aws_iam_role.github_ci
+aws_iam_role.node
+aws_iam_role_policy_attachment.cluster
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"]
+aws_iam_role_policy_attachment.node["arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"]
+aws_internet_gateway.this
+aws_kms_key.backups
+aws_kms_key.eks
+aws_nat_gateway.this
+aws_route_table.private
+aws_route_table.public
+aws_route_table_association.private[0]
+aws_route_table_association.private[1]
+aws_route_table_association.public[0]
+aws_route_table_association.public[1]
+aws_s3_bucket.backups
+aws_s3_bucket_public_access_block.backups
+aws_s3_bucket_server_side_encryption_configuration.backups
+aws_s3_bucket_versioning.backups
+aws_subnet.private[0]
+aws_subnet.private[1]
+aws_subnet.public[0]
+aws_subnet.public[1]
+aws_vpc.this
+random_id.suffix
+
+```
+
+### Verify through the AWS APIs (boto3 -> LocalStack)
+
+```text
+VPC     vpc-990d72e0  10.30.0.0/16  yatri-prod-vpc
+  subnet  10.30.0.0/20    ap-south-1a  yatri-prod-public-ap-south-1a public IP on launch=False
+  subnet  10.30.128.0/20  ap-south-1a  yatri-prod-private-ap-south-1a public IP on launch=False
+  subnet  10.30.144.0/20  ap-south-1b  yatri-prod-private-ap-south-1b public IP on launch=False
+  subnet  10.30.16.0/20   ap-south-1b  yatri-prod-public-ap-south-1b public IP on launch=False
+  NAT     nat-1b494e3f923d23ab4  state=available  subnet=subnet-e5cfda26
+  routes  yatri-prod-public-rt   0.0.0.0/0 -> igw-b6a8dc62
+  routes  yatri-prod-private-rt  0.0.0.0/0 -> nat-1b494e3f923d23ab4
+S3      yatri-prod-backups-43da14a4  versioning=Enabled  encryption=aws:kms  all public access blocked=True
+KMS     yatri-prod backup bucket encryption  rotation=True  state=Enabled
+KMS     yatri-prod EKS secrets encryption    rotation=True  state=Enabled
+OIDC    token.actions.githubusercontent.com  audience=['sts.amazonaws.com']
+IAM     role yatri-prod-eks-node  trusted by ec2.amazonaws.com
+IAM     role yatri-prod-github-ci trusted by arn:aws:iam::000000000000:oidc-provider/token.actions.githubusercontent.com
+          StringEquals token.actions.githubusercontent.com:aud = sts.amazonaws.com
+          StringLike token.actions.githubusercontent.com:sub = repo:milesmoralis2411/devops_hw:ref:refs/heads/main
+IAM     role yatri-prod-eks-cluster trusted by eks.amazonaws.com
+```
+
+### Destroy
+
+```text
+$ terraform destroy -input=false -no-color -auto-approve 2>&1 | grep -E '^Destroy complete|^Error'
+Destroy complete! Resources: 29 destroyed.
+
+$ terraform state list | wc -l
+0
+
+```
+
+### The two services LocalStack's free edition does not emulate
+
+Run separately, after that destroy:
+
+```text
+$ terraform apply -input=false -no-color -auto-approve -target=aws_ecr_repository.app 2>&1 | grep '^Error'
+Error: creating ECR Repository (yatri/yatri-trips): operation error ECR: CreateRepository, https response error StatusCode: 501, RequestID: cfc2c8c1-3dea-4b2e-a73d-d134212a0d8f, api error InternalFailure: API for service 'ecr' not yet implemented or pro feature - please check https://docs.localstack.cloud/references/coverage/ for further information
+
+$ terraform apply -input=false -no-color -auto-approve -target=aws_eks_cluster.this 2>&1 | grep -E '^Error|Creation complete' | sed 's/ \[id=.*//'
+aws_iam_role.cluster: Creation complete after 1s
+aws_iam_role_policy_attachment.cluster: Creation complete after 0s
+aws_kms_key.eks: Creation complete after 9s
+aws_vpc.this: Creation complete after 11s
+aws_subnet.public[0]: Creation complete after 0s
+aws_subnet.public[1]: Creation complete after 0s
+aws_subnet.private[1]: Creation complete after 0s
+aws_subnet.private[0]: Creation complete after 0s
+Error: creating EKS Cluster (yatri-prod): operation error EKS: CreateCluster, https response error StatusCode: 501, RequestID: 8c698db8-8c6d-40cf-8478-fa74c3ee2864, api error InternalFailure: API for service 'eks' not yet implemented or pro feature - please check https://docs.localstack.cloud/references/coverage/ for further information
+
+$ terraform destroy -input=false -no-color -auto-approve 2>&1 | grep -E '^Destroy complete|^Error'
+Destroy complete! Resources: 8 destroyed.
+```
+
+Both return HTTP 501: EKS and ECR are LocalStack Pro features. Every
+resource the free edition supports was created, checked and destroyed; EKS and
+ECR are covered by `validate` (section 9) and the plan above.

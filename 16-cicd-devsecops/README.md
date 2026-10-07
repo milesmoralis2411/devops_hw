@@ -181,3 +181,15 @@ The workflow triggers on changes to the app, this folder or the workflow
 itself. SARIF results appear under **Security → Code scanning**. CodeQL needs
 the repository to be public, or GitHub Advanced Security on a private
 repository.
+
+### Results on GitHub
+
+| Run | Result |
+| --- | --- |
+| [DevSecOps #1](https://github.com/milesmoralis2411/devops_hw/actions/runs/37661260765) (commit `13c0ae9`) | ❌ `3 - SCA` could not start: `Unable to resolve action aquasecurity/trivy-action@0.28.0, unable to find version 0.28.0` |
+| [DevSecOps #2](https://github.com/milesmoralis2411/devops_hw/actions/runs/37663251964) (commit `020fdc7`) | ✅ all 8 stages, after pinning the action to a commit SHA (v0.36.0, Trivy 0.70.0) |
+
+Before pushing the fix, the new scanner was run locally against the rebuilt
+image: `alpine 3.24.2 — CRITICAL=0, HIGH=0`, so the gate passes.
+
+![DevSecOps run #2: build, SAST, SCA, secret scan, image scan, gate, push, deploy](screenshots/github-actions-devsecops_24bcs10326.png)

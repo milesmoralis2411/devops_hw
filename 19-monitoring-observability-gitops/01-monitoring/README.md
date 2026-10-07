@@ -171,3 +171,35 @@ panels: [stat] Ready replicas · [stat] Targets up · [stat] Error ratio (1m) ·
 
 Open it with `kubectl -n monitoring port-forward svc/grafana 3000:3000`, then
 http://localhost:3000/d/metrics-app.
+
+## Screenshots
+
+Captured on 2026-10-07 with this folder's manifests redeployed in the same
+cluster as the Session 21 platform. Both use the `monitoring` namespace, so
+Session 21's monitoring was paused for a few minutes, and Argo CD restored it
+from Git afterwards. The traffic Pod from the run above sent ~10% of requests
+to `/error`.
+
+**Grafana** — the provisioned dashboard: 2 ready replicas, a 9.75% error ratio,
+request rate by route, latency, and CPU and memory per Pod.
+
+![Grafana metrics-app dashboard](screenshots/grafana-metrics-app-dashboard_24bcs10326.png)
+
+**Prometheus targets** — every scrape target `UP`. Discovery is by
+annotation in all namespaces, so it also finds the two Session 21
+`yatri-trips` Pods running in the same cluster.
+
+![Prometheus targets](screenshots/prometheus-targets_24bcs10326.png)
+
+**Prometheus alerts** — `HighErrorRate` firing (error ratio above 5%); the
+other 7 rules inactive.
+
+![Prometheus alert rules](screenshots/prometheus-alerts_24bcs10326.png)
+
+**PromQL** — `sum by (route, status) (rate(http_requests_total{app="metrics-app"}[1m]))`.
+
+![Request rate by route and status](screenshots/prometheus-request-rate-graph_24bcs10326.png)
+
+**Alertmanager** — the alert routed to the `webhook-logger` receiver.
+
+![Alertmanager](screenshots/alertmanager-alerts_24bcs10326.png)

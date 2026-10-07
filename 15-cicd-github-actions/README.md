@@ -205,6 +205,22 @@ only place GitHub looks for them. They trigger on pushes that touch
 5. Optional: under **Settings → Environments → production**, add a required
    reviewer to turn on manual approval before deploy.
 
-> **Screenshots:** the GitHub Actions run pages (green checks, the job graph,
-> artifacts and summary) only exist once the workflows have run on GitHub.
-> Capture them after pushing.
+## Results on GitHub
+
+Both workflows ran when this folder was pushed (commit `13c0ae9`) and passed:
+
+| Workflow | Jobs | Run |
+| --- | --- | --- |
+| CI | Build and test (Node 20) ✅ · Build and test (Node 22) ✅ · Build Docker image ✅ | [CI #1](https://github.com/milesmoralis2411/devops_hw/actions/runs/37661260780) |
+| CD | Build and push to GHCR ✅ · Deploy to Kubernetes ✅ | [CD #1](https://github.com/milesmoralis2411/devops_hw/actions/runs/37661260875) |
+
+![CI run: matrix build on Node 20 and 22, then the Docker image](screenshots/github-actions-ci_24bcs10326.png)
+
+![CD run: image pushed to GHCR, then the deploy job](screenshots/github-actions-cd_24bcs10326.png)
+
+The repository's Actions tab. Two runs in the same push failed: the
+DevSecOps pipeline (Session 17) and the final project's pipeline (Session 21).
+Both were fixed in the next commit, `020fdc7`; the cause is explained in
+[Session 17](../16-cicd-devsecops/README.md#results-on-github).
+
+![All workflow runs](screenshots/github-actions-all-runs_24bcs10326.png)

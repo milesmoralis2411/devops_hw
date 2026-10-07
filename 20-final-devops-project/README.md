@@ -216,12 +216,23 @@ Two root modules, with different blast radii:
 
 | Module | Provider(s) | Creates | Run here |
 | --- | --- | --- | --- |
-| [`terraform/aws/`](terraform/aws/) | `aws`, `random` | VPC across 2 AZs (public + private subnets, IGW, NAT, routes; no auto-assigned public IPs), **EKS** cluster (API endpoint **private by default**, KMS-encrypted Secrets, audit logs) + managed node group in private subnets, **ECR** repository (immutable tags, scan on push, lifecycle), **S3** backup bucket (versioned, customer-managed KMS key, public access blocked), **GitHub OIDC** provider + least-privilege CI role | `init` / `fmt` / `validate` — no AWS account was available, and LocalStack's free edition does not emulate EKS |
+| [`terraform/aws/`](terraform/aws/) | `aws`, `random` | VPC across 2 AZs (public + private subnets, IGW, NAT, routes; no auto-assigned public IPs), **EKS** cluster (API endpoint **private by default**, KMS-encrypted Secrets, audit logs) + managed node group in private subnets, **ECR** repository (immutable tags, scan on push, lifecycle), **S3** backup bucket (versioned, customer-managed KMS key, public access blocked), **GitHub OIDC** provider + least-privilege CI role | `init` / `fmt` / `validate`, then against **LocalStack**: `plan` = 34 resources; **29 applied**, verified through the AWS APIs, destroyed. EKS and ECR return `501` (LocalStack Pro features). No AWS account was available |
 | [`terraform/cluster-bootstrap/`](terraform/cluster-bootstrap/) | `kubernetes`, `helm`, `random` | Namespaces `yatri` (PSA restricted), `monitoring`, `argocd`; ResourceQuota + LimitRange; generated `API_KEY` and Grafana admin Secrets; **Argo CD** via `helm_release` | **Applied for real** against minikube |
 
 The OIDC role means the CI pipeline can push to ECR with **no AWS keys stored in
 GitHub** — the workflow's `id-token: write` permission is exchanged for
 15-minute credentials limited to one repository.
+
+**Running `terraform/aws` without an AWS account** (LocalStack 3.8, free
+edition, which has no EKS or ECR; output in [EVIDENCE.md §11](EVIDENCE.md)):
+
+```bash
+docker run -d --name localstack -p 4566:4566 localstack/localstack:3.8
+cd terraform/aws && cp localstack_override.tf.example override.tf
+terraform init && terraform plan                     # Plan: 34 to add
+terraform apply -target=random_id.suffix -target=aws_vpc.this   -target=aws_subnet.public -target=aws_subnet.private -target=aws_internet_gateway.this   -target=aws_eip.nat -target=aws_nat_gateway.this -target=aws_route_table.public   -target=aws_route_table.private -target=aws_route_table_association.public   -target=aws_route_table_association.private -target=aws_kms_key.eks -target=aws_kms_key.backups   -target=aws_s3_bucket.backups -target=aws_s3_bucket_versioning.backups   -target=aws_s3_bucket_server_side_encryption_configuration.backups   -target=aws_s3_bucket_public_access_block.backups -target=aws_iam_openid_connect_provider.github   -target=aws_iam_role.github_ci -target=aws_iam_role.cluster -target=aws_iam_role.node   -target=aws_iam_role_policy_attachment.cluster -target=aws_iam_role_policy_attachment.node
+terraform destroy && rm override.tf                  # back to real AWS
+```
 
 ## 9. CI/CD pipeline
 
@@ -366,6 +377,8 @@ Everything above was executed in one pass on minikube. Full output is in
 | 7. Release v1.0.1 | Pipeline → commit `467828a` → Synced/Healthy in **11s** → both Pods on `1.0.1`; the three trips survived the rollout (PVC) |
 | SAST | Semgrep, 86 rules including 3 custom: **0 findings** |
 | `terraform/aws` | `init` / `fmt` / `validate`: `Success! The configuration is valid.` |
+| `terraform/aws` on LocalStack | `Plan: 34 to add` · `Apply complete! Resources: 29 added` (all but EKS + ECR) · checked via boto3: private subnets with no public IPs, NAT route, S3 versioned + `aws:kms` + public access blocked, both KMS keys rotating, CI role trusts only `repo:milesmoralis2411/devops_hw:ref:refs/heads/main` · `Destroy complete! Resources: 29 destroyed` |
+| Pipeline in GitHub Actions | First run: `trivy-action@0.28.0` no longer resolves, Trivy 0.70.0's KSV-0118 → action pinned by SHA, monitoring Pods hardened via GitOps ([§10](EVIDENCE.md)) |
 
 ## 13. Troubleshooting challenge
 
@@ -391,11 +404,59 @@ post-incident actions — is in
 
 ## 14. Screenshots
 
-All evidence in this project is **captured terminal output**, stored verbatim
-in [EVIDENCE.md](EVIDENCE.md) and [troubleshooting/EVIDENCE.md](troubleshooting/EVIDENCE.md),
-following the same convention as the earlier homework folders.
+The verbatim terminal output is in [EVIDENCE.md](EVIDENCE.md) and
+[troubleshooting/EVIDENCE.md](troubleshooting/EVIDENCE.md). These are the
+same running platform in the browser, captured on 2026-10-07 after the
+incident and the hardening rollout.
 
-For graphical screenshots, bring the lab up with the steps above, then:
+**Argo CD** — the App of Apps (`yatri-root`) and the two Applications it
+manages, all Synced / Healthy. `yatri-gitops` is the Session 20 demo, synced
+from GitHub.
+
+![Argo CD applications](screenshots/argocd-applications_24bcs10326.png)
+
+**`yatri-trips`** — Deployment, HPA, PDB, PVC, Ingress, and the ReplicaSet
+history of the incident: one ReplicaSet per release and fix.
+
+![Argo CD yatri-trips tree](screenshots/argocd-yatri-trips-tree_24bcs10326.png)
+
+**`yatri-monitoring`** — synced to `4097b57`, the hardening commit.
+
+![Argo CD yatri-monitoring resources](screenshots/argocd-yatri-monitoring-list_24bcs10326.png)
+
+**Grafana** — the provisioned *Yatri Trips – Service Overview* dashboard, with
+live traffic through the Ingress. *Error ratio* shows "No data" because there
+were no 5xx responses to divide. *PVC usage* has no data because minikube's
+hostPath provisioner does not report kubelet volume stats.
+
+![Grafana dashboard](screenshots/grafana-yatri-dashboard_24bcs10326.png)
+
+**Prometheus** — all 6 targets up, and the 12 alert rules. The traffic
+generator also sent unauthenticated writes on purpose, and
+**`YatriAuthFailureSpike` fired** (11.6 auth failures/min in Grafana above).
+
+![Prometheus targets](screenshots/prometheus-targets_24bcs10326.png)
+
+![Prometheus alert rules](screenshots/prometheus-alert-rules_24bcs10326.png)
+
+**Alertmanager** — that alert routed to the `alert-log` receiver (team
+`security`).
+
+![Alertmanager](screenshots/alertmanager-alerts_24bcs10326.png)
+
+**Gitea** — the platform repository's history: the incident, its fixes, the
+post-incident alert, the game day, and the hardening commit.
+
+![Gitea commit history](screenshots/gitea-platform-history_24bcs10326.png)
+
+**GitHub Actions** — the pipeline on the monorepo ([run #2](https://github.com/milesmoralis2411/devops_hw/actions/runs/37663251908)):
+test → SAST / SCA / secret scan → build + image scan + gate pass. *Push to
+ECR* and *GitOps deploy* are skipped until `AWS_CI_ROLE_ARN` is set
+([section 9](#9-cicd-pipeline)).
+
+![GitHub Actions pipeline](screenshots/github-actions-pipeline_24bcs10326.png)
+
+To open them yourself, with the lab running:
 
 | View | Command | URL |
 | --- | --- | --- |
@@ -403,7 +464,6 @@ For graphical screenshots, bring the lab up with the steps above, then:
 | Grafana dashboard | `kubectl -n monitoring port-forward svc/grafana 3000:3000` | http://localhost:3000/d/yatri-trips — password from `terraform -chdir=terraform/cluster-bootstrap output -raw grafana_admin_password` |
 | Prometheus alerts / targets | `kubectl -n monitoring port-forward svc/prometheus 9090:9090` | http://localhost:9090/alerts |
 | The API | `kubectl -n yatri port-forward svc/yatri-trips 8081:80` | http://localhost:8081/api/trips |
-| GitHub Actions | push the repository | the repository's **Actions** tab |
 
 ## 15. Lessons learned
 

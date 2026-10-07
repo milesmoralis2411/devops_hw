@@ -98,11 +98,12 @@ in the READMEs / `EVIDENCE.md` files:
 
 minikube v1.39.0 (Kubernetes v1.37.0, containerd), Helm v3.22.0, Terraform v1.16.5,
 LocalStack 3.8.1, Argo CD v3.5.4, Prometheus v2.55.1, Grafana 11.3.0,
-Trivy 0.57.1, Gitleaks 8.21.2, Semgrep 1.179.0 — on Windows 11 with Docker Desktop.
+Trivy 0.57.1 (local) / 0.70.0 (GitHub Actions), Gitleaks 8.21.2, Semgrep 1.179.0 — on Windows 11 with Docker Desktop.
 
-> The `EVIDENCE.md` files contain the verbatim terminal output. For image-style
-> screenshots (browser windows), open the running apps at the ports listed and
-> capture them — the apps are live once you run the build commands.
+> The `EVIDENCE.md` files contain the verbatim terminal output. Browser
+> screenshots of Grafana, Prometheus, Alertmanager, Argo CD, Gitea and the
+> GitHub Actions runs are in sessions 16, 17, 20 and 21, taken from the running
+> lab with headless Microsoft Edge (Playwright).
 
 ## Quick start (Docker homeworks)
 

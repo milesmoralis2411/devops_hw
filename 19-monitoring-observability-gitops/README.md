@@ -13,7 +13,7 @@ Deliverables map:
 | Monitoring demo | [01-monitoring/README.md](01-monitoring/README.md) + [EVIDENCE.md](01-monitoring/EVIDENCE.md) |
 | Observability documentation | [02-observability/README.md](02-observability/README.md) |
 | GitOps demo | [03-gitops/README.md](03-gitops/README.md) + [EVIDENCE.md](03-gitops/EVIDENCE.md) |
-| Screenshots | The Grafana dashboard and Argo CD UI can be opened with the `port-forward` commands in each README |
+| Screenshots | Grafana, Prometheus (targets, alerts, PromQL) and Alertmanager in [01-monitoring/README.md](01-monitoring/README.md#screenshots); Argo CD syncing from GitHub in [03-gitops/README.md](03-gitops/README.md#try-the-full-commit--sync-loop-yourself) |
 
 Executed on minikube v1.39.0 / Kubernetes v1.37.0 with Prometheus v2.55.1,
 Alertmanager v0.27.0, Grafana 11.3.0, kube-state-metrics v2.13.0, Argo CD
