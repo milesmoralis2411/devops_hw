@@ -53,6 +53,14 @@ demo-chart/templates/NOTES.txt
 demo-chart/templates/tests/test-connection.yaml
 ```
 
+> **Screenshots:** live output from a second run on 2026-10-08, so names, ages and timestamps differ from the evidence text.
+
+![helm version](screenshots/cmd-helm-version_24bcs10326.png)
+
+![helm create - scaffold a new chart](screenshots/cmd-helm-create-scaffold-a-new-chart_24bcs10326.png)
+
+![helm template / lint - render locally without a cluster](screenshots/cmd-helm-template-lint-render-locally-without-a-clus_24bcs10326.png)
+
 ## helm install → the release is ordinary Kubernetes objects
 
 ```text
@@ -74,6 +82,16 @@ $ kubectl exec client -- wget -qO- http://yatri-app
 <p>release: yatri-app</p>
 <p>app:     1.25-alpine</p>
 ```
+
+![helm install](screenshots/cmd-helm-install_24bcs10326.png)
+
+![helm list](screenshots/cmd-helm-list_24bcs10326.png)
+
+![helm status](screenshots/cmd-helm-status_24bcs10326.png)
+
+![helm get](screenshots/cmd-helm-get_24bcs10326.png)
+
+![The release is real Kubernetes objects](screenshots/cmd-the-release-is-real-kubernetes-objects_24bcs10326.png)
 
 ## helm upgrade → helm history → helm rollback
 
@@ -101,6 +119,14 @@ $ helm history yatri-app -n helm-demo
 A rollback does **not** rewrite history. It creates a *new* revision whose
 content equals the old one, so the full audit trail is kept.
 
+![helm upgrade](screenshots/cmd-helm-upgrade_24bcs10326.png)
+
+![helm history](screenshots/cmd-helm-history_24bcs10326.png)
+
+![helm rollback](screenshots/cmd-helm-rollback_24bcs10326.png)
+
+![helm uninstall](screenshots/cmd-helm-uninstall_24bcs10326.png)
+
 ## helm repo and helm search
 
 ```text
@@ -116,6 +142,12 @@ jetstack/cert-manager    v1.21.2         v1.21.2
 
 `search repo` only searches repositories you have added; `search hub` queries
 the public Artifact Hub index.
+
+![helm repo](screenshots/cmd-helm-repo_24bcs10326.png)
+
+![helm search  (1/2)](screenshots/cmd-helm-search-1_24bcs10326.png)
+
+![helm search  (2/2)](screenshots/cmd-helm-search-2_24bcs10326.png)
 
 ## A bug found while running this
 

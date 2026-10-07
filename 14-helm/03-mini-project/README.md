@@ -74,6 +74,16 @@ only):
 APP_ENV=production LOG_LEVEL=warn RELEASE_NAME=yatri-app CHART_VERSION=0.1.0 API_TOKEN_LENGTH=20
 ```
 
+> **Screenshots:** live output from a second run on 2026-10-08, so names, ages and timestamps differ from the evidence text.
+
+![One chart, two environments](screenshots/mini-one-chart-two-environments_24bcs10326.png)
+
+![What each environment got](screenshots/mini-what-each-environment-got_24bcs10326.png)
+
+![Reach the prod release through the Ingress](screenshots/mini-reach-the-prod-release-through-the-ingress_24bcs10326.png)
+
+![Secrets and ConfigMap are injected](screenshots/mini-secrets-and-configmap-are-injected_24bcs10326.png)
+
 ## Config change → automatic rollout
 
 ```text
@@ -87,6 +97,8 @@ REVISION
 2          <- a new ReplicaSet, triggered only by the config change
 ```
 
+![Config change rolls the Pods automatically (checksum annotation)](screenshots/mini-config-change-rolls-the-pods-automatically-check_24bcs10326.png)
+
 ## helm test
 
 ```text
@@ -98,6 +110,8 @@ Phase:          Succeeded
 The test hook is a short-lived Pod that `wget`s the Service. The image is pinned
 to `busybox:1.36`. An untagged `busybox` would mean `:latest`, which implies
 `imagePullPolicy: Always` and a registry round-trip on every test run.
+
+![helm test](screenshots/mini-helm-test_24bcs10326.png)
 
 ## helm package
 
@@ -113,3 +127,5 @@ yatri-app/templates/...
 
 The `.tgz` is what a chart repository serves (`helm repo index` +
 any static host, or an OCI registry with `helm push`).
+
+![Package the chart](screenshots/mini-package-the-chart_24bcs10326.png)

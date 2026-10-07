@@ -16,6 +16,8 @@ result. Run these on any machine with Docker installed.
 backend attached to 2 networks, and verify connectivity.
 
 ```bash
+
+![Task 1: connectivity between the frontend, backend and database containers](screenshots/task1-connectivity.png)
 # 1. Create 3 user-defined bridge networks
 docker network create frontend-net
 docker network create backend-net
@@ -101,6 +103,8 @@ and `netstat` shows it listening on `:::80` in the host's own network stack.
 container restart.
 
 ```bash
+
+![Task 3: bind-mounted index.html served by Nginx, change visible without a restart](screenshots/task3-bind-mount.png)
 # 1. Create a local folder + index.html
 mkdir -p ~/nginx-site
 echo "Hello students" > ~/nginx-site/index.html
@@ -163,6 +167,8 @@ docker service ps web                              # replicas spread across node
 
 Containers/tasks of the `web` service can now reach each other by name across
 every node in the Swarm.
+
+![Task 4: overlay network](screenshots/task4-overlay.png)
 
 ---
 

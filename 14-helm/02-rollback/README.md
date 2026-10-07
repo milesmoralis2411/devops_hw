@@ -22,12 +22,18 @@ REVISION  STATUS    DESCRIPTION
 1         deployed  Install complete
 ```
 
+> **Screenshots:** live output from a second run on 2026-10-08, so names, ages and timestamps differ from the evidence text.
+
+![1. Install - revision 1 (nginx 1.25, greeting v1)](screenshots/rb-1-install-revision-1-nginx-1-25-greeting-v1_24bcs10326.png)
+
 ## 2. Upgrade — revision 2
 
 ```bash
 helm upgrade yatri-app ./yatri-app -n helm-demo \
   --set image.tag=1.26-alpine --set 'config.GREETING=Release v2' --wait --timeout 3m
 ```
+
+![2. Upgrade - revision 2 (nginx 1.26, greeting v2)](screenshots/rb-2-upgrade-revision-2-nginx-1-26-greeting-v2_24bcs10326.png)
 
 ## 3. Verify
 
@@ -44,6 +50,8 @@ yatri-app-79c8996554-wmqn9   nginx:1.26-alpine   Running
 <p>app:     1.26-alpine</p>
 ```
 
+![3. Verify](screenshots/rb-3-verify_24bcs10326.png)
+
 ## 4. Upgrade again — revision 3 ships a broken image
 
 ```bash
@@ -54,6 +62,8 @@ helm upgrade yatri-app ./yatri-app -n helm-demo \
 ```text
 Error: UPGRADE FAILED: context deadline exceeded
 ```
+
+![4. Upgrade again - revision 3 ships a broken image tag](screenshots/rb-4-upgrade-again-revision-3-ships-a-broken-image-_24bcs10326.png)
 
 ## 5. Verify — the upgrade failed, but users never noticed
 
@@ -77,6 +87,8 @@ Pod once a new one is **Ready**. The new Pod never became Ready, so both v2
 Pods kept serving. `--wait` is what made Helm notice and mark the revision
 `failed` instead of `deployed`.
 
+![5. Verify - the upgrade failed](screenshots/rb-5-verify-the-upgrade-failed_24bcs10326.png)
+
 ## 6. Rollback to revision 2
 
 ```bash
@@ -86,6 +98,8 @@ helm rollback yatri-app 2 -n helm-demo --wait --timeout 3m
 ```text
 Rollback was a success! Happy Helming!
 ```
+
+![6. Rollback to revision 2](screenshots/rb-6-rollback-to-revision-2_24bcs10326.png)
 
 ## 7. Verify
 
@@ -110,6 +124,8 @@ image:
 The rollback became **revision 4**: Helm never deletes history, so the failed
 attempt stays on record. `helm get values` confirms the live release is back
 on the revision 2 values, and the broken Pod was removed.
+
+![7. Verify](screenshots/rb-7-verify_24bcs10326.png)
 
 ## Takeaways
 
