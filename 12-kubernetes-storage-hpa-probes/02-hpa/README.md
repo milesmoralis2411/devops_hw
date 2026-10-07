@@ -108,6 +108,24 @@ Two behaviours are visible:
   most 50% per minute (10 → 5 → 2 → 1). This damping prevents flapping when
   load is bursty.
 
+> **Screenshots:** live output from a second, complete run on 2026-10-07: scale-out 1 → 2 → 4 → 8 → 10 under load, then scale-in 10 → 5 → 2 → 1 once the 300 s stabilization window passed. Every command the task lists (`get hpa`, `get pods`, `top pods`, `describe hpa`) is in the samples.
+
+![1. Deploy the application and 2. configure the HPA](screenshots/hpa-1-deploy-the-application-and-2-configure-the-hpa_24bcs10326.png)
+
+![3. Verify the HPA](screenshots/hpa-3-verify-the-hpa_24bcs10326.png)
+
+![4. Deploy the load generator / 5. increase load](screenshots/hpa-4-deploy-the-load-generator-5-increase-load_24bcs10326.png)
+
+![6. CPU utilisation and 7. Pod scaling, sampled every 30s  (1/3)](screenshots/hpa-6-cpu-utilisation-and-7-pod-scaling-sampled-ever-1_24bcs10326.png)
+
+![6. CPU utilisation and 7. Pod scaling, sampled every 30s  (2/3)](screenshots/hpa-6-cpu-utilisation-and-7-pod-scaling-sampled-ever-2_24bcs10326.png)
+
+![6. CPU utilisation and 7. Pod scaling, sampled every 30s  (3/3)](screenshots/hpa-6-cpu-utilisation-and-7-pod-scaling-sampled-ever-3_24bcs10326.png)
+
+![Scale-out evidence](screenshots/hpa-scale-out-evidence_24bcs10326.png)
+
+![Remove the load and watch it scale back in](screenshots/hpa-remove-the-load-and-watch-it-scale-back-in_24bcs10326.png)
+
 ## Requirements and gotchas
 
 - **metrics-server** must be running (`minikube addons enable metrics-server`),

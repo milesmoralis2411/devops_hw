@@ -43,6 +43,10 @@ ingress-nginx   ingress-nginx-controller-d7cd8c989-tfmp7   0/1     ContainerCrea
 `-o jsonpath` and `-o custom-columns` pull exactly the fields you need, which is
 ideal for scripts and for comparing many Pods at once.
 
+> **Screenshots:** live output from a second run on 2026-10-07 in a scratch namespace, `ts-cmds`.
+
+![kubectl get - what exists and what state is it in?](screenshots/cmd-kubectl-get-what-exists-and-what-state-is-it-in_24bcs10326.png)
+
 ## kubectl get -o wide
 
 Adds the Pod IP, the node, and (for Services) the selector:
@@ -55,6 +59,8 @@ kubectl get nodes -o wide                  # internal IP, OS image, kernel, cont
 
 The Service `SELECTOR` column next to the Pods' `--show-labels` is how a broken
 Service selector is spotted (see [common issue 06](../02-common-issues/06-service-connectivity/)).
+
+![kubectl get -o wide - add IPs and node placement](screenshots/cmd-kubectl-get-o-wide-add-ips-and-node-placement_24bcs10326.png)
 
 ## kubectl describe
 
@@ -69,6 +75,8 @@ recent Events**. For anything stuck — `Pending`, `ContainerCreating`,
 `ImagePullBackOff`, `CreateContainerConfigError` — the Events section usually
 states the cause outright, often before the container has produced a single
 log line.
+
+![kubectl describe - full detail plus recent events](screenshots/cmd-kubectl-describe-full-detail-plus-recent-events_24bcs10326.png)
 
 ## kubectl logs
 
@@ -90,6 +98,8 @@ Deployment at once.
 > once that container had been garbage-collected. See the
 > [Pod lifecycle notes](../../09-kubernetes-pods-replicasets-deployments/05-pod-lifecycle/).
 
+![kubectl logs - what did the process print?](screenshots/cmd-kubectl-logs-what-did-the-process-print_24bcs10326.png)
+
 ## kubectl exec
 
 ```bash
@@ -107,6 +117,10 @@ command diagnosed the [loopback-bind bug](../02-common-issues/08-pod-networking/
 (`127.0.0.1:80` instead of `0.0.0.0:80`) and the
 [wrong targetPort](../03-mini-project/) (`0.0.0.0:8080` while the Service sent
 traffic to 80).
+
+![kubectl exec - look from inside the container  (1/2)](screenshots/cmd-kubectl-exec-look-from-inside-the-container-1_24bcs10326.png)
+
+![kubectl exec - look from inside the container  (2/2)](screenshots/cmd-kubectl-exec-look-from-inside-the-container-2_24bcs10326.png)
 
 ## kubectl events
 
@@ -130,6 +144,8 @@ Events are only kept for about **1 hour** by default, so capture them early.
 `kubectl events` sorts properly by time; `kubectl get events` needs
 `--sort-by`.
 
+![kubectl events - the cluster's own timeline](screenshots/cmd-kubectl-events-the-cluster-s-own-timeline_24bcs10326.png)
+
 ## kubectl explain
 
 ```bash
@@ -148,6 +164,10 @@ DESCRIPTION:
 This is the API reference for the exact cluster version, offline. It answers
 "is the field `targetPort` or `targetport`?" and "where does `ndots` go?"
 without guessing.
+
+![kubectl explain - built-in API documentation  (1/2)](screenshots/cmd-kubectl-explain-built-in-api-documentation-1_24bcs10326.png)
+
+![kubectl explain - built-in API documentation  (2/2)](screenshots/cmd-kubectl-explain-built-in-api-documentation-2_24bcs10326.png)
 
 ## kubectl top
 
@@ -171,6 +191,8 @@ limit means OOMKills are coming, and CPU pinned at the limit means throttling.
 > needs a full scrape cycle (up to about 60s) after a Pod starts before it has
 > data. That is not a fault, but it is easy to misread as one.
 
+![kubectl top - live CPU and memory (needs metrics-server)](screenshots/cmd-kubectl-top-live-cpu-and-memory-needs-metrics-se_24bcs10326.png)
+
 ## Other everyday helpers
 
 ```bash
@@ -182,3 +204,7 @@ kubectl cluster-info
 kubectl get --raw='/readyz?verbose'                           # API server health checks
 kubectl diff -f fixed/                                        # live object vs manifest
 ```
+
+![Other everyday helpers  (1/2)](screenshots/cmd-other-everyday-helpers-1_24bcs10326.png)
+
+![Other everyday helpers  (2/2)](screenshots/cmd-other-everyday-helpers-2_24bcs10326.png)

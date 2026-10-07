@@ -62,6 +62,10 @@ against the container memory limit:
 and the data is gone. A Deployment rolling update deletes Pods, so an
 `emptyDir` does *not* survive a deploy.
 
+> **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text.
+
+![emptyDir shared by two containers, gone with the Pod](screenshots/vol-emptydir-shared-between-two-containers-gone-with_24bcs10326.png)
+
 ## hostPath
 
 Mounts a file or directory from the **node's** filesystem into the Pod.
@@ -98,6 +102,8 @@ whichever node holds the data, so rescheduling loses it; and a writable
 `hostPath` is a serious security hole — mounting `/` or the container runtime
 socket is a straightforward container escape. Most clusters block it with Pod
 Security Admission (`baseline` and `restricted` both forbid it).
+
+![hostPath reading a file written on the node](screenshots/vol-hostpath-reading-the-node-filesystem_24bcs10326.png)
 
 ## PersistentVolume (PV)
 
@@ -183,6 +189,8 @@ exclusive and one-to-one — a second PVC cannot bind the same PV.
 
 ```bash
 kubectl get pv,pvc
+
+![Static PV + PVC: data survives a new Pod](screenshots/vol-persistentvolume-persistentvolumeclaim-static_24bcs10326.png)
 # STATUS: Available -> Bound -> Released
 ```
 
@@ -271,6 +279,8 @@ one PVC per replica automatically:
 That yields `data-mysql-0`, `data-mysql-1`, `data-mysql-2` — and crucially,
 when `mysql-1` is rescheduled it reattaches to *its own* `data-mysql-1`, which
 is what makes a StatefulSet actually stateful.
+
+![StorageClass dynamically provisions a PV](screenshots/vol-storageclass-dynamic-provisioning_24bcs10326.png)
 
 ## Summary
 

@@ -36,6 +36,20 @@ writes `index.html` if it is not already on the volume:
 $ kubectl logs <first pod> -c seed-content
 seeded fresh content
 
+> **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text.
+
+![Deploy the mini project](screenshots/mini-deploy-the-mini-project_24bcs10326.png)
+
+![Storage: the init container seeded the PVC](screenshots/mini-storage-the-init-container-seeded-the-pvc_24bcs10326.png)
+
+![Data survives Pod replacement](screenshots/mini-data-survives-pod-replacement_24bcs10326.png)
+
+![Configuration: ConfigMap + Secret injected](screenshots/mini-configuration-configmap-secret-injected_24bcs10326.png)
+
+![Probes: break /healthz and watch Kubernetes react](screenshots/mini-probes-break-healthz-and-watch-kubernetes-react_24bcs10326.png)
+
+![HPA: generate load](screenshots/mini-hpa-generate-load_24bcs10326.png)
+
 # edit the page live, then replace every Pod with a rollout restart
 $ kubectl logs <new pod> -c seed-content
 content already present, leaving it alone

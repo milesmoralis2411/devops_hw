@@ -31,6 +31,10 @@ The startup probe allows up to 30 × 2s = 60s to boot. Without it, a slow
 starter needs a large liveness `initialDelaySeconds`, which also delays
 detecting a real hang later.
 
+> **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text.
+
+![startup, liveness and readiness probes passing](screenshots/probe-probes_24bcs10326.png)
+
 ## 02 — Failing liveness → restarts
 
 [02-failing-liveness.yaml](02-failing-liveness.yaml) probes `/healthz`, which
@@ -46,6 +50,8 @@ Normal   Killing    Container web failed liveness probe, will be restarted
 Two restarts in 45 seconds. The application itself was fine — nginx was
 serving `/` — but a liveness probe pointed at the wrong path kills a healthy
 container over and over. **A wrong liveness probe is worse than none.**
+
+![Failing liveness probe: restarts](screenshots/probe-failing-liveness-probe-restarts_24bcs10326.png)
 
 ## 03 — Failing readiness → no traffic, no restart
 
@@ -66,6 +72,8 @@ Warning  Unhealthy  Readiness probe failed: HTTP probe failed with statuscode: 4
 
 The Pod is selected by the Service, yet marked `ready=false` in the
 EndpointSlice, so kube-proxy sends it no traffic. `RESTARTS` stays at 0.
+
+![Failing readiness probe: removed from the Service, never restarted](screenshots/probe-failing-readiness-probe-removed-from-service-nev_24bcs10326.png)
 
 ## 04 — exec and tcpSocket handlers
 
@@ -89,6 +97,8 @@ container runs `sleep` under `/bin/sh` as **PID 1**, which ignores `SIGTERM`, so
 the kubelet waits the full `terminationGracePeriodSeconds` (30s) before
 sending `SIGKILL`. Applications that do not handle `SIGTERM` slow down every
 restart and every rolling update in exactly this way.
+
+![exec and tcpSocket probe handlers](screenshots/probe-exec-and-tcpsocket-probe-handlers_24bcs10326.png)
 
 ## Choosing probe settings
 
