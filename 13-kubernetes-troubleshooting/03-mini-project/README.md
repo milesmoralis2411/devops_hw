@@ -21,6 +21,10 @@ below was run live; the full output is in [EVIDENCE.md](EVIDENCE.md).
 
 > *"The shop is down. Nothing loads."*
 
+> **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text.
+
+![Deploy the broken shop](screenshots/mini-deploy-the-broken-shop_24bcs10326.png)
+
 ## Investigation, bug by bug
 
 ### Bug 1 — frontend Pods stuck in `Pending`
@@ -39,6 +43,8 @@ $ kubectl get deploy shop-frontend -o jsonpath='{...resources}'
 **Root cause:** `requests.cpu: 32` on a node with 24 allocatable CPUs.
 **Fix:** `kubectl set resources deploy/shop-frontend --requests=cpu=20m --limits=cpu=100m`.
 
+![Bug 1 - frontend Pods stuck in Pending](screenshots/mini-bug-1-frontend-pods-stuck-in-pending_24bcs10326.png)
+
 ### Bug 2 — now the frontend crash-loops
 
 ```text
@@ -55,6 +61,8 @@ api-svc         ClusterIP   ...   8080/TCP          <- the Service is api-svc, n
 called `api`, so nginx refuses to start. **Fix:** `proxy_pass http://api-svc:8080`
 in the ConfigMap, then `kubectl rollout restart` — a ConfigMap change alone does
 not restart Pods.
+
+![Bug 2 - frontend now CrashLoopBackOff](screenshots/mini-bug-2-frontend-now-crashloopbackoff_24bcs10326.png)
 
 ### Bug 3 — Pods are Running, but the site does not answer
 
@@ -77,6 +85,8 @@ $ kubectl get pods -l app=shop-frontend --show-labels
 $ curl http://<node-ip>:30081/
 <h1>Yatri Shop</h1>  [HTTP 200]
 ```
+
+![Bug 3 - frontend Pods are Running, but the site does not answer](screenshots/mini-bug-3-frontend-pods-are-running-but-the-site-doe_24bcs10326.png)
 
 ### Bug 4 — home page works, `/api/products` returns 502
 
@@ -103,6 +113,8 @@ ok
 > IPv4 only. Testing against `127.0.0.1` gave the true answer. Always check
 > which address family your test is actually using.
 
+![Bug 4 - the home page works, /api/products returns an error](screenshots/mini-bug-4-the-home-page-works-api-products-returns-a_24bcs10326.png)
+
 ### Bug 5 — Pods Ready, endpoints present, still 502
 
 ```text
@@ -128,6 +140,8 @@ $ curl http://<node-ip>:30081/api/products
 [{"id":1,"name":"Masala Chai","price":20},{"id":2,"name":"Samosa","price":15}]  [HTTP 200]
 ```
 
+![Bug 5 - Pods Ready, endpoints present, still failing](screenshots/mini-bug-5-pods-ready-endpoints-present-still-failing_24bcs10326.png)
+
 ## Verification
 
 ```text
@@ -142,6 +156,8 @@ no functional differences
 cluster now matches the corrected source of truth. In a real team the fixes
 would be committed to `fixed/` (or Git) first, so the next deploy does not
 reintroduce the bugs.
+
+![Final state and drift check against fixed/](screenshots/mini-final-state-and-drift-check-against-fixed_24bcs10326.png)
 
 ## Summary
 

@@ -47,6 +47,10 @@ On Kubernetes v1.37 the `STATUS` column showed `Error` between restarts rather
 than `CrashLoopBackOff`. The `BackOff` events and the climbing `RESTARTS` count
 are the reliable signals.
 
+> **Screenshots:** live output from a second run on 2026-10-07, so names and ages differ from the evidence text. Each one follows the same steps: identify, investigate, root cause, fix, verify.
+
+![01 - CrashLoopBackOff](screenshots/issue-01-crashloopbackoff_24bcs10326.png)
+
 ## 02 — ImagePullBackOff (the tag does not exist)
 
 ```text
@@ -61,6 +65,8 @@ Warning  Failed   Error: ImagePullBackOff
 **Root cause:** the repository exists, the tag does not. The events show the
 progression: one failed pull (`ErrImagePull`), then the kubelet backs off
 (`ImagePullBackOff`). **Fix:** a real tag (`nginx:1.25-alpine`).
+
+![02 - ImagePullBackOff (tag does not exist)](screenshots/issue-02-imagepullbackoff-tag-does-not-exist_24bcs10326.png)
 
 ## 03 — ErrImagePull (the repository does not exist)
 
@@ -84,6 +90,8 @@ as it does for a private one**, so from the outside the two look identical.
 > doomed pulls were queued behind it. Once that pull finished, the same
 > manifests failed in 2–4 seconds. A long `Pulling` is not always the image
 > you are looking at.
+
+![03 - ErrImagePull (repository does not exist)](screenshots/issue-03-errimagepull-repository-does-not-exist_24bcs10326.png)
 
 ## 04 — Pending
 
@@ -109,6 +117,8 @@ Note that with minikube's Docker driver on WSL2 the node advertises all
 **24 host CPUs**, not the `--cpus=2` given at start-up. The scheduler works
 from the node's *reported* allocatable capacity.
 
+![04 - Pending](screenshots/issue-04-pending_24bcs10326.png)
+
 ## 05 — Stuck in ContainerCreating
 
 ```text
@@ -125,6 +135,8 @@ kubelet retries the mount:
 containercreating-demo         1/1   Running   0   44s
 containercreating-demo-fixed   1/1   Running   0   22s
 ```
+
+![05 - Stuck in ContainerCreating](screenshots/issue-05-stuck-in-containercreating_24bcs10326.png)
 
 ## 06 — Service connectivity
 
@@ -148,6 +160,8 @@ on port 8080), yet the connection is still refused because nginx listens on 80.
 "No endpoints" and "endpoints but refused" are different bugs, and
 `get endpointslices` tells them apart instantly.
 
+![06 - Service connectivity](screenshots/issue-06-service-connectivity_24bcs10326.png)
+
 ## 07 — DNS issues
 
 ```text
@@ -165,6 +179,8 @@ search default.svc.cluster.local svc.cluster.local cluster.local
 Service lives in `backend-ns`. **Fix:** use
 `backend.backend-ns.svc.cluster.local` → resolves to `10.102.244.254` and
 serves the nginx page.
+
+![07 - DNS issues](screenshots/issue-07-dns-issues_24bcs10326.png)
 
 ## 08 — Pod networking: server bound to loopback
 
@@ -202,6 +218,10 @@ dropped no traffic. Enforcing them needs a policy-aware CNI
 (`minikube start --cni=calico`). This is itself a common real-world trap: a
 policy that is accepted is not necessarily enforced.
 
+![08 - Pod networking (server bound to loopback)](screenshots/issue-08-pod-networking-server-bound-to-loopback_24bcs10326.png)
+
+![08b - Pod networking variant: NetworkPolicy](screenshots/issue-08b-pod-networking-variant-networkpolicy_24bcs10326.png)
+
 ## 09 — Configuration errors
 
 The broken Pod contains **three** separate mistakes. Kubernetes surfaces them
@@ -210,6 +230,8 @@ one at a time:
 ```text
 config-demo   0/1   ContainerCreating
   FailedMount  configmap "extra-settings" not found              <- error 1 surfaces first
+
+![09 - Configuration errors](screenshots/issue-09-configuration-errors_24bcs10326.png)
 
 # after the missing ConfigMap exists, the next error appears:
 config-demo   0/1   CreateContainerConfigError

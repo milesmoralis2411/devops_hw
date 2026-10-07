@@ -53,3 +53,72 @@ These came from the live runs and were not planned in advance:
   `localhost` gave a false "connection refused".
 - **kindnet does not enforce NetworkPolicy.** Policies are accepted and stored
   but drop nothing. That is a real-world trap of its own.
+
+## Screenshots
+
+Live output from a second run of every task on 2026-10-07. Each image also
+sits next to its explanation in the task's own README.
+
+### Task 1 — Troubleshooting commands
+
+![kubectl get - what exists and what state is it in?](01-commands/screenshots/cmd-kubectl-get-what-exists-and-what-state-is-it-in_24bcs10326.png)
+
+![kubectl get -o wide - add IPs and node placement](01-commands/screenshots/cmd-kubectl-get-o-wide-add-ips-and-node-placement_24bcs10326.png)
+
+![kubectl describe - full detail plus recent events](01-commands/screenshots/cmd-kubectl-describe-full-detail-plus-recent-events_24bcs10326.png)
+
+![kubectl logs - what did the process print?](01-commands/screenshots/cmd-kubectl-logs-what-did-the-process-print_24bcs10326.png)
+
+![kubectl exec - look from inside the container  (1/2)](01-commands/screenshots/cmd-kubectl-exec-look-from-inside-the-container-1_24bcs10326.png)
+
+![kubectl exec - look from inside the container  (2/2)](01-commands/screenshots/cmd-kubectl-exec-look-from-inside-the-container-2_24bcs10326.png)
+
+![kubectl events - the cluster's own timeline](01-commands/screenshots/cmd-kubectl-events-the-cluster-s-own-timeline_24bcs10326.png)
+
+![kubectl explain - built-in API documentation  (1/2)](01-commands/screenshots/cmd-kubectl-explain-built-in-api-documentation-1_24bcs10326.png)
+
+![kubectl explain - built-in API documentation  (2/2)](01-commands/screenshots/cmd-kubectl-explain-built-in-api-documentation-2_24bcs10326.png)
+
+![kubectl top - live CPU and memory (needs metrics-server)](01-commands/screenshots/cmd-kubectl-top-live-cpu-and-memory-needs-metrics-se_24bcs10326.png)
+
+![Other everyday helpers  (1/2)](01-commands/screenshots/cmd-other-everyday-helpers-1_24bcs10326.png)
+
+![Other everyday helpers  (2/2)](01-commands/screenshots/cmd-other-everyday-helpers-2_24bcs10326.png)
+
+### Task 2 — Common issues (identify → investigate → root cause → fix → verify)
+
+![01 - CrashLoopBackOff](02-common-issues/screenshots/issue-01-crashloopbackoff_24bcs10326.png)
+
+![02 - ImagePullBackOff (tag does not exist)](02-common-issues/screenshots/issue-02-imagepullbackoff-tag-does-not-exist_24bcs10326.png)
+
+![03 - ErrImagePull (repository does not exist)](02-common-issues/screenshots/issue-03-errimagepull-repository-does-not-exist_24bcs10326.png)
+
+![04 - Pending](02-common-issues/screenshots/issue-04-pending_24bcs10326.png)
+
+![05 - Stuck in ContainerCreating](02-common-issues/screenshots/issue-05-stuck-in-containercreating_24bcs10326.png)
+
+![06 - Service connectivity](02-common-issues/screenshots/issue-06-service-connectivity_24bcs10326.png)
+
+![07 - DNS issues](02-common-issues/screenshots/issue-07-dns-issues_24bcs10326.png)
+
+![08 - Pod networking (server bound to loopback)](02-common-issues/screenshots/issue-08-pod-networking-server-bound-to-loopback_24bcs10326.png)
+
+![08b - Pod networking variant: NetworkPolicy](02-common-issues/screenshots/issue-08b-pod-networking-variant-networkpolicy_24bcs10326.png)
+
+![09 - Configuration errors](02-common-issues/screenshots/issue-09-configuration-errors_24bcs10326.png)
+
+### Task 3 — Mini project: five layered bugs
+
+![Deploy the broken shop](03-mini-project/screenshots/mini-deploy-the-broken-shop_24bcs10326.png)
+
+![Bug 1 - frontend Pods stuck in Pending](03-mini-project/screenshots/mini-bug-1-frontend-pods-stuck-in-pending_24bcs10326.png)
+
+![Bug 2 - frontend now CrashLoopBackOff](03-mini-project/screenshots/mini-bug-2-frontend-now-crashloopbackoff_24bcs10326.png)
+
+![Bug 3 - frontend Pods are Running, but the site does not answer](03-mini-project/screenshots/mini-bug-3-frontend-pods-are-running-but-the-site-doe_24bcs10326.png)
+
+![Bug 4 - the home page works, /api/products returns an error](03-mini-project/screenshots/mini-bug-4-the-home-page-works-api-products-returns-a_24bcs10326.png)
+
+![Bug 5 - Pods Ready, endpoints present, still failing](03-mini-project/screenshots/mini-bug-5-pods-ready-endpoints-present-still-failing_24bcs10326.png)
+
+![Final state and drift check against fixed/](03-mini-project/screenshots/mini-final-state-and-drift-check-against-fixed_24bcs10326.png)
