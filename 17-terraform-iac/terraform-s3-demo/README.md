@@ -130,6 +130,36 @@ Things learned while running it:
   3 minutes. The same check failed for every filter variant tested. On real
   AWS the default (`true`) applies them normally.
 
+> **Screenshots:** live output from a second run of the same commands on 2026-10-07 against LocalStack 3.8, so IDs differ from [EVIDENCE.md](EVIDENCE.md). Very long outputs are split into numbered parts; for the plan and destroy, the first and last parts are shown and the full text is in EVIDENCE.md.
+
+![environment](screenshots/tf-environment_24bcs10326.png)
+
+![terraform init](screenshots/tf-terraform-init_24bcs10326.png)
+
+![terraform fmt](screenshots/tf-terraform-fmt_24bcs10326.png)
+
+![terraform validate](screenshots/tf-terraform-validate_24bcs10326.png)
+
+![terraform plan 1](screenshots/tf-terraform-plan-1_24bcs10326.png)
+
+![terraform plan 2](screenshots/tf-terraform-plan-2_24bcs10326.png)
+
+![terraform apply](screenshots/tf-terraform-apply_24bcs10326.png)
+
+![terraform show 1](screenshots/tf-terraform-show-1_24bcs10326.png)
+
+![terraform show 2](screenshots/tf-terraform-show-2_24bcs10326.png)
+
+![terraform output](screenshots/tf-terraform-output_24bcs10326.png)
+
+![verify the bucket really exists aws cli inside l](screenshots/tf-verify-the-bucket-really-exists-aws-cli-inside-l_24bcs10326.png)
+
+![change detection edit a variable plan shows an i](screenshots/tf-change-detection-edit-a-variable-plan-shows-an-i_24bcs10326.png)
+
+![terraform destroy 1](screenshots/tf-terraform-destroy-1_24bcs10326.png)
+
+![terraform destroy 3](screenshots/tf-terraform-destroy-3_24bcs10326.png)
+
 ## Running it against real AWS
 
 ```bash

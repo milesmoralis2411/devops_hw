@@ -48,3 +48,19 @@ when reality no longer matches the code.
 | **Plan** | The computed diff between code and reality |
 | **Module** | A reusable package of `.tf` files |
 | **Backend** | Where the state is stored — local file, S3, Terraform Cloud |
+
+## Screenshots
+
+The S3 demo's full workflow against LocalStack 3.8, from live output on
+2026-10-07. Every step from `init` to `destroy` is in
+[terraform-s3-demo/README.md](terraform-s3-demo/README.md#executed-run).
+
+![terraform plan: 8 to add](terraform-s3-demo/screenshots/tf-terraform-plan-2_24bcs10326.png)
+
+![terraform apply](terraform-s3-demo/screenshots/tf-terraform-apply_24bcs10326.png)
+
+![terraform output](terraform-s3-demo/screenshots/tf-terraform-output_24bcs10326.png)
+
+![The bucket exists, checked with the AWS CLI](terraform-s3-demo/screenshots/tf-verify-the-bucket-really-exists-aws-cli-inside-l_24bcs10326.png)
+
+![terraform destroy](terraform-s3-demo/screenshots/tf-terraform-destroy-3_24bcs10326.png)

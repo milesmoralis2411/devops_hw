@@ -48,6 +48,10 @@ ts-missing-configmap-fixed   1/1     Running   0     1s
 $ kubectl logs ts-missing-configmap-fixed
 APP_ENV=production
 
+> **Screenshots:** live output from a second run of the same cases on 2026-10-07, so Pod names and ages differ from [EVIDENCE.md](EVIDENCE.md).
+
+![Case 01 before / fix / after](screenshots/ts-case-01-pod-references-a-missing-configmap_24bcs10326.png)
+
 # and the ORIGINAL Pod recovered on its own, with no restart needed:
 ts-missing-configmap         1/1     Running   0     28s
 ```
@@ -87,6 +91,8 @@ DB_PASS is 16 characters long
 
 The password was verified by its *length*, never by printing it.
 
+![Case 02 before / fix / after](screenshots/ts-case-02-secret-exists-but-the-key-name-is-wrong_24bcs10326.png)
+
 ## 03 — Ingress points at a Service that does not exist
 
 **Before**
@@ -121,6 +127,8 @@ ts-ingress-fixed   nginx   ts-demo.local   192.168.49.2   80
 $ curl -H 'Host: ts-demo.local' http://localhost/ | grep -o '<title>.*</title>'
 <title>Welcome to nginx!</title>
 ```
+
+![Case 03 before / fix / after](screenshots/ts-case-03-ingress-points-at-a-service-name-that-do_24bcs10326.png)
 
 ## 04 — Ingress names a class no controller implements
 
@@ -176,3 +184,7 @@ example ingress-nginx installed with Helm defaults, or a cluster running
 several controllers — omitting the class fails exactly as in case 04. The
 lesson: always set `ingressClassName` explicitly rather than relying on
 cluster defaults.
+
+![Case 04 before / fix / after](screenshots/ts-case-04-ingress-names-an-ingressclass-no-control_24bcs10326.png)
+
+![Why a class-less Ingress still works on minikube](screenshots/ts-note-why-an-ingress-with-no-class-still-works-on_24bcs10326.png)

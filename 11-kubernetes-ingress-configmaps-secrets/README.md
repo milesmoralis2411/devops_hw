@@ -14,6 +14,10 @@ environment, log level, currency, and port. Both workloads receive these values
 as environment variables, so configuration can change without rebuilding an
 image.
 
+> **Screenshots:** live output from a run on 2026-10-07. Secret values are masked.
+
+![ConfigMap created, injected with envFrom, verified inside both containers](full-demo/demo-task-1-configmap-created-injected-verified-insid_24bcs10326.png)
+
 ## Secret
 
 The Secret stores the database username, password, and database name. The
@@ -54,12 +58,16 @@ What to do instead:
 The `secret.yaml` in this demo holds throwaway lab values. A real project
 would use one of the approaches above.
 
+![Secret created, injected with secretKeyRef, verified without printing values](full-demo/demo-task-2-secret-created-injected-verified-values-n_24bcs10326.png)
+
 ## Ingress
 
 The NGINX Ingress controller provides one entry point for both services.
 Requests to `/` reach the frontend, while requests to `/api/` are routed to the
 backend. The rewrite rule removes the `/api` prefix before the backend receives
 the request.
+
+![Ingress rules, both routes answering, unknown host 404](full-demo/demo-task-3-ingress-one-entry-point-two-routes_24bcs10326.png)
 
 ## Evidence
 
@@ -92,6 +100,16 @@ scenarios: a missing ConfigMap, a wrong Secret key, an Ingress pointing at a
 non-existent Service, and an Ingress with a class no controller implements.
 Each was identified, investigated, root-caused, fixed and verified, with
 before/after output in [troubleshooting/EVIDENCE.md](troubleshooting/EVIDENCE.md).
+
+![Case 01 before / fix / after](troubleshooting/screenshots/ts-case-01-pod-references-a-missing-configmap_24bcs10326.png)
+
+![Case 02 before / fix / after](troubleshooting/screenshots/ts-case-02-secret-exists-but-the-key-name-is-wrong_24bcs10326.png)
+
+![Case 03 before / fix / after](troubleshooting/screenshots/ts-case-03-ingress-points-at-a-service-name-that-do_24bcs10326.png)
+
+![Case 04 before / fix / after](troubleshooting/screenshots/ts-case-04-ingress-names-an-ingressclass-no-control_24bcs10326.png)
+
+![Why a class-less Ingress still works on minikube](troubleshooting/screenshots/ts-note-why-an-ingress-with-no-class-still-works-on_24bcs10326.png)
 
 ## Key Takeaway
 

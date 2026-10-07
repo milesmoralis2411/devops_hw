@@ -80,13 +80,18 @@ docker run -d --name apache-host --network host httpd
 curl http://localhost:80
 ```
 
-**Expected outcome:** `curl` returns the default Apache page
-(`<html><body><h1>It works!</h1></body></html>`). With `--network host` the
-container binds port 80 on the host itself, so no port publishing is required.
+**Result (executed 2026-10-07):** `docker ps` shows **no port mapping** and
+`NetworkMode=host`. Apache answers `It works!` on port 80 of the Docker host,
+and `netstat` shows it listening on `:::80` in the host's own network stack.
 
-> Note: host networking works on Linux Docker hosts. On Docker Desktop
-> (Windows/Mac) the container runs inside a Linux VM, so use a Linux host or WSL2
-> for the true host-network behaviour.
+![Apache on the host network, reached on port 80 with no -p mapping](screenshots/s08-task-2-apache-on-the-host-network_24bcs10326.png)
+
+> **Why the last command gets no answer:** on Docker Desktop (Windows/Mac)
+> the "host" is the Linux VM that runs Docker, not Windows. So `--network host`
+> binds port 80 inside that VM: every host-network container reaches it, but
+> Windows' own `localhost:80` does not. On a Linux machine, or with Docker
+> Desktop's *Enable host networking* option, the same container is reachable
+> from the machine itself.
 
 ---
 

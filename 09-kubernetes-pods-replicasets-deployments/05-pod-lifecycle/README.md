@@ -67,6 +67,10 @@ Events:
 and 256 Gi, and the only node has 24 CPUs and about 7.6 Gi. A Pod stays `Pending` indefinitely
 until something changes — a smaller request, or a new node.
 
+> **Screenshots:** live output from a second run of the same commands on 2026-10-07, so Pod names and timings differ from [EVIDENCE.md](EVIDENCE.md).
+
+![01-pending.yaml: Pending, FailedScheduling](screenshots/lifecycle-01-pending_24bcs10326.png)
+
 ## 02 — Running
 
 ```text
@@ -86,6 +90,8 @@ Events:  Scheduled -> Pulled -> Created -> Started
 scheduler assigns the Pod to a node, then the kubelet pulls the image, creates
 the container and starts it. All five Pod conditions become `True`, in order.
 
+![02-running.yaml: Running and Ready](screenshots/lifecycle-02-running_24bcs10326.png)
+
 ## 03 — Succeeded
 
 ```text
@@ -100,6 +106,8 @@ Because `restartPolicy: Never`, nothing restarted it, so the Pod reached the
 terminal phase `Succeeded`. `kubectl` shows this as `Completed`. This is how
 Job Pods finish.
 
+![03-succeeded.yaml: Completed, exit code 0](screenshots/lifecycle-03-succeeded_24bcs10326.png)
+
 ## 04 — Failed
 
 ```text
@@ -113,6 +121,8 @@ phase=Failed exitCode=1 reason=Error
 it ends in the terminal phase `Failed`. The exit code is preserved in the
 container status and the logs remain readable — the first two things to check
 when a batch job fails.
+
+![04-failed.yaml: Error, exit code 1](screenshots/lifecycle-04-failed_24bcs10326.png)
 
 ## 05 — Restart with back-off (CrashLoopBackOff)
 
@@ -139,6 +149,8 @@ growing delay is the back-off. Two details stand out:
   identify the loop. `kubectl logs` showed the crashed run's output
   (`starting`).
 
+![05-crashloopbackoff.yaml: restarts with growing back-off](screenshots/lifecycle-05-crashloopbackoff_24bcs10326.png)
+
 ## 06 — Init containers
 
 ```text
@@ -159,6 +171,8 @@ containers had exited successfully, in order. The page nginx served was
 written by `init-seed` into a shared `emptyDir`, which is the standard pattern
 for "prepare something, then start the app".
 
+![06-init-containers.yaml: Init:0/2 to Running](screenshots/lifecycle-06-init-containers_24bcs10326.png)
+
 ## 07 — Lifecycle hooks
 
 ```text
@@ -175,6 +189,8 @@ sent: it slept 10 seconds, then stopped nginx gracefully, so deletion took
 11s instead of about 1s. This is how applications drain in-flight requests
 before shutting down.
 
+![07-lifecycle-hooks.yaml: postStart and preStop](screenshots/lifecycle-07-lifecycle-hooks_24bcs10326.png)
+
 ## 08 — Probes
 
 ```text
@@ -189,6 +205,8 @@ Ready=True  ContainersReady=True
 liveness probes. Readiness then marked the Pod `Ready`. Probe *failures* —
 restarts from liveness, endpoint removal from readiness — are demonstrated in
 [Session 13](../../12-kubernetes-storage-hpa-probes/03-probes/).
+
+![08-probes.yaml: startup, liveness, readiness](screenshots/lifecycle-08-probes_24bcs10326.png)
 
 ## All phases side by side
 
@@ -206,3 +224,5 @@ lifecycle-succeeded   0/1     Completed   0               phase Succeeded
 Note the two `Error` rows: one is the terminal phase `Failed`, the other is a
 `Running` Pod in a restart loop. Only the `PHASE` field or the restart count
 tells them apart.
+
+![Every phase side by side](screenshots/lifecycle-summary-of-every-phase_24bcs10326.png)

@@ -52,11 +52,43 @@ output.
 | Canary | 1 canary + 4 stable replicas → 18 of 100 requests hit the canary (~20%) |
 | Recreate | All 4 old Pods terminated before any new Pod was created — a visible outage window |
 
+> **Screenshots:** live output from a second run on 2026-10-07; Pod names, ages and the exact canary split differ slightly from the EVIDENCE files.
+
+![Rolling update: rollout to the new version](04-deployment-strategies/screenshots/strategy-1-rolling-update-1_24bcs10326.png)
+
+![Rolling update: old and new ReplicaSets](04-deployment-strategies/screenshots/strategy-1-rolling-update-2_24bcs10326.png)
+
+![Blue-green: switch the Service selector](04-deployment-strategies/screenshots/strategy-2-blue-green_24bcs10326.png)
+
+![Canary: 15/85 split, then promotion](04-deployment-strategies/screenshots/strategy-3-canary_24bcs10326.png)
+
+![Recreate: every old Pod terminates before new ones start](04-deployment-strategies/screenshots/strategy-4-recreate-1_24bcs10326.png)
+
+![Recreate: events and final Pods](04-deployment-strategies/screenshots/strategy-4-recreate-2_24bcs10326.png)
+
 ## Task 2 — Pod lifecycle
 
 Eight YAML files each drive a Pod into one lifecycle state. Each was applied,
 inspected with `get` and `describe`, and explained; see
 [05-pod-lifecycle/README.md](05-pod-lifecycle/README.md).
+
+![01-pending.yaml: Pending, FailedScheduling](05-pod-lifecycle/screenshots/lifecycle-01-pending_24bcs10326.png)
+
+![02-running.yaml: Running and Ready](05-pod-lifecycle/screenshots/lifecycle-02-running_24bcs10326.png)
+
+![03-succeeded.yaml: Completed, exit code 0](05-pod-lifecycle/screenshots/lifecycle-03-succeeded_24bcs10326.png)
+
+![04-failed.yaml: Error, exit code 1](05-pod-lifecycle/screenshots/lifecycle-04-failed_24bcs10326.png)
+
+![05-crashloopbackoff.yaml: restarts with growing back-off](05-pod-lifecycle/screenshots/lifecycle-05-crashloopbackoff_24bcs10326.png)
+
+![06-init-containers.yaml: Init:0/2 to Running](05-pod-lifecycle/screenshots/lifecycle-06-init-containers_24bcs10326.png)
+
+![07-lifecycle-hooks.yaml: postStart and preStop](05-pod-lifecycle/screenshots/lifecycle-07-lifecycle-hooks_24bcs10326.png)
+
+![08-probes.yaml: startup, liveness, readiness](05-pod-lifecycle/screenshots/lifecycle-08-probes_24bcs10326.png)
+
+![Every phase side by side](05-pod-lifecycle/screenshots/lifecycle-summary-of-every-phase_24bcs10326.png)
 
 ## Takeaway
 

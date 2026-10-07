@@ -169,6 +169,36 @@ rather than by weakening `main.tf`:
    `lifecycle { ignore_changes = [metadata_options] }` for LocalStack runs only;
    on real AWS the requirement stays enforced.
 
+> **Screenshots:** live output from a second run of the same commands on 2026-10-07 against LocalStack 3.8, so IDs differ from [EVIDENCE.md](EVIDENCE.md). Very long outputs are split into numbered parts; for the plan and destroy, the first and last parts are shown and the full text is in EVIDENCE.md.
+
+![terraform init providers are downloaded](screenshots/tf-terraform-init-providers-are-downloaded_24bcs10326.png)
+
+![terraform fmt validate](screenshots/tf-terraform-fmt-validate_24bcs10326.png)
+
+![dependency graph](screenshots/tf-dependency-graph_24bcs10326.png)
+
+![terraform plan 1](screenshots/tf-terraform-plan-1_24bcs10326.png)
+
+![terraform plan 6](screenshots/tf-terraform-plan-6_24bcs10326.png)
+
+![terraform apply](screenshots/tf-terraform-apply_24bcs10326.png)
+
+![terraform state 1](screenshots/tf-terraform-state-1_24bcs10326.png)
+
+![terraform state 2](screenshots/tf-terraform-state-2_24bcs10326.png)
+
+![terraform output](screenshots/tf-terraform-output_24bcs10326.png)
+
+![verify the resources through the aws api inside ](screenshots/tf-verify-the-resources-through-the-aws-api-inside-_24bcs10326.png)
+
+![drift change the state outside terraform plan de 1](screenshots/tf-drift-change-the-state-outside-terraform-plan-de-1_24bcs10326.png)
+
+![drift change the state outside terraform plan de 2](screenshots/tf-drift-change-the-state-outside-terraform-plan-de-2_24bcs10326.png)
+
+![terraform destroy 1](screenshots/tf-terraform-destroy-1_24bcs10326.png)
+
+![terraform destroy 7](screenshots/tf-terraform-destroy-7_24bcs10326.png)
+
 ## Running it on real AWS
 
 ```bash

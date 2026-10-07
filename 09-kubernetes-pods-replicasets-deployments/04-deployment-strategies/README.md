@@ -51,6 +51,12 @@ never drops — an old Pod is only removed after its replacement passes
 readiness. This is the Kubernetes default and the right choice for most
 stateless services.
 
+> **Screenshots:** live output from a second run of the same commands on 2026-10-07, so Pod names and timings differ from [EVIDENCE.md](EVIDENCE.md).
+
+![Rolling update: rollout to the new version](screenshots/strategy-1-rolling-update-1_24bcs10326.png)
+
+![Rolling update: old and new ReplicaSets](screenshots/strategy-1-rolling-update-2_24bcs10326.png)
+
 ## 02 — Blue-green
 
 **Setup:** two complete Deployments, `web-blue` (v1.0) and `web-green` (v2.0),
@@ -66,6 +72,8 @@ kubectl patch svc bg-web -p '{"spec":{"selector":{"app":"bg-web","version":"gree
 **Observed:**
 
 ```text
+
+![Blue-green: switch the Service selector](screenshots/strategy-2-blue-green_24bcs10326.png)
 # BEFORE the switch
 VERSION=BLUE v1.0 pod=web-blue-8b6b9f787-l49px
 VERSION=BLUE v1.0 pod=web-blue-8b6b9f787-9x2z9
@@ -93,6 +101,8 @@ same Service.
 **Observed** — 100 requests, counted:
 
 ```text
+
+![Canary: 15/85 split, then promotion](screenshots/strategy-3-canary_24bcs10326.png)
 # 1 canary : 4 stable replicas  (expected ~20% canary)
      18 CANARY v2.0
      82 STABLE v1.0
@@ -143,3 +153,7 @@ updated` several times — the window in which **no** Pods were serving.
 is used when two versions must never run concurrently — a database schema
 migration that the old code cannot handle, a singleton consumer, or a
 `ReadWriteOnce` volume that only one Pod may mount.
+
+![Recreate: every old Pod terminates before new ones start](screenshots/strategy-4-recreate-1_24bcs10326.png)
+
+![Recreate: events and final Pods](screenshots/strategy-4-recreate-2_24bcs10326.png)
