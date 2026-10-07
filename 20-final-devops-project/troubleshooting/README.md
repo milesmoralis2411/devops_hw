@@ -43,6 +43,12 @@ Argo CD had applied the commit faithfully — it was **Synced** — but the
 application was **Degraded**. GitOps guarantees the cluster matches Git, not
 that Git is correct.
 
+> **Screenshots:** the terminal output captured *during* the incident run on 2026-10-07 (the verbatim text is in [EVIDENCE.md](EVIDENCE.md)), rendered as images. The incident was not re-staged for the screenshots: re-breaking the live platform would not reproduce it, because the 1.1.0 image now exists.
+
+![The bad release](screenshots/incident-the-bad-release-1_24bcs10326.png)
+
+![Symptom report](screenshots/incident-symptom-report_24bcs10326.png)
+
 ## Issue 1 — the new version never starts (ResourceQuota)
 
 **Identify**
@@ -68,6 +74,10 @@ Warning  FailedCreate  replicaset-controller  Error creating: pods "yatri-trips-
 **Fix:** commit `1b6d7f8` restores 96Mi / 256Mi. **Verify:** a new Pod is
 created — and immediately shows the next problem.
 
+![Issue 1 - the new version never starts: ResourceQuota  (1/2)](screenshots/incident-issue-1-the-new-version-never-starts-resourcequo-1_24bcs10326.png)
+
+![Issue 1 - the new version never starts: ResourceQuota  (2/2)](screenshots/incident-issue-1-the-new-version-never-starts-resourcequo-2_24bcs10326.png)
+
 ## Issue 2 — ImagePullBackOff (the image was never published)
 
 ```text
@@ -83,6 +93,8 @@ pipeline that builds, scans and pushes the image never ran for 1.1.0.
 **gate PASSED** → push. Registry tags became `["1.1.0","1.0.0","1.0.1"]`
 (deploy commit `8fdd45e`). The stuck Pod was deleted so the kubelet retried
 immediately instead of waiting out its pull back-off.
+
+![Issue 2 - ImagePullBackOff: the image was never published](screenshots/incident-issue-2-imagepullbackoff-the-image-was-never-pub_24bcs10326.png)
 
 ## Issue 3 — CreateContainerConfigError (wrong Secret name)
 
@@ -102,6 +114,8 @@ $ git log -p -1 79fc385 -- helm/yatri-trips/values-prod.yaml
 **Fix:** commit `1fe51f4` removes the override. **Verify:** the rollout
 completes, and both new Pods run `yatri-trips:1.1.0` and are Ready.
 
+![Issue 3 - CreateContainerConfigError: wrong Secret name](screenshots/incident-issue-3-createcontainerconfigerror-wrong-secret-_24bcs10326.png)
+
 ## Issue 4 — still 404 (Ingress host typo)
 
 ```text
@@ -117,6 +131,8 @@ yatri-trips   nginx   yatri-prod.locl   192.168.49.2      <- "locl"
 $ curl -H 'Host: yatri-prod.local' http://<ingress>/   -> HTTP 200
 {"service":"yatri-trips","version":"1.1.0","env":"production"}
 ```
+
+![Issue 4 - still 404: the Ingress host](screenshots/incident-issue-4-still-404-the-ingress-host_24bcs10326.png)
 
 ## Issue 5 — why did nobody get paged?
 
@@ -139,6 +155,8 @@ target was found by reading the targets list by hand.
 (`prometheus-config-4fb2md2c7g`) and Prometheus rolled automatically. All 6
 targets were back `up`, with no active alerts.
 
+![Issue 5 - why did nobody get paged? Monitoring was half-blind](screenshots/incident-issue-5-why-did-nobody-get-paged-monitoring-was-_24bcs10326.png)
+
 ## Final state
 
 ```text
@@ -155,6 +173,8 @@ deployment.apps/yatri-trips   2/2
 image, Secret) failed *alongside* the two healthy v1.0.1 Pods, which kept
 serving and kept the data. Users lost the hostname to the Ingress typo
 (fault D); the broken rollouts alone would not have taken the API down.
+
+![Final state](screenshots/incident-final-state_24bcs10326.png)
 
 ## Post-incident actions
 
@@ -176,6 +196,12 @@ It was committed (`a980d81`); Prometheus rolled automatically, and
 (`fe5a5af`):
 
 ```text
+
+![Post-incident action 1 - alert on the monitoring itself](screenshots/incident-post-incident-action-1-alert-on-the-monitoring-i_24bcs10326.png)
+
+![Post-incident action 2 - game day: break the scrape target on purpose, confirm it pages](screenshots/incident-post-incident-action-2-game-day-break-the-scrape_24bcs10326.png)
+
+![Post-incident action 3 - revert the game-day break](screenshots/incident-post-incident-action-3-revert-the-game-day-break_24bcs10326.png)
 # 164s after Prometheus restarted with the broken config:
 Prometheus:    MonitoringTargetDown   critical   firing   Prometheus cannot scrape job kube-state-metrics ...
 Alertmanager:  MonitoringTargetDown   active     receivers=['alert-log']

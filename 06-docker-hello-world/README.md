@@ -28,6 +28,8 @@ curl http://localhost:3000        # -> Hello World from Node.js!
 > Verified locally (running `node server.js` directly): `curl` returned
 > `<h1>Hello World from Node.js!</h1>`.
 
+![Node.js Hello World on :3000](screenshots/nodejs-app.png)
+
 ### python-app
 ```bash
 cd python-app
@@ -35,6 +37,8 @@ docker build -t hello-python .
 docker run -d -p 5000:5000 --name hello-python hello-python
 curl http://localhost:5000        # -> Hello World from Python (Flask)!
 ```
+
+![Python/Flask Hello World on :5000](screenshots/python-app.png)
 
 ### java-app
 ```bash
@@ -44,6 +48,8 @@ docker run -d -p 8080:8080 --name hello-java hello-java
 curl http://localhost:8080        # -> Hello World from Java!
 ```
 
+![Java Hello World on :8085](screenshots/java-app.png)
+
 ### Apache-app
 ```bash
 cd Apache-app
@@ -52,11 +58,15 @@ docker run -d -p 8081:80 --name hello-apache hello-apache
 curl http://localhost:8081        # -> Hello World from Apache HTTP Server!
 ```
 
+![Apache Hello World on :8081](screenshots/apache-app.png)
+
 ### React-app
 ```bash
 cd React-app
 docker build -t hello-react .     # multi-stage: npm build -> nginx
 docker run -d -p 8082:80 --name hello-react hello-react
+
+![React Hello World on :8082](screenshots/react-app.png)
 # open http://localhost:8082      -> Hello World from React!
 ```
 
@@ -68,6 +78,8 @@ docker run -d -p 8083:80 --name hello-nginx hello-nginx
 curl http://localhost:8083        # -> Hello World from Nginx!
 ```
 
+![Nginx Hello World on :8083](screenshots/nginx-app.png)
+
 ## Verify all running containers
 
 ```bash
@@ -76,6 +88,8 @@ docker ps
 
 > ✅ Screenshots of all 6 webpages and `docker ps` are in
 > [`screenshots/`](screenshots/) and embedded in [`EVIDENCE.md`](EVIDENCE.md).
+
+![docker ps: all six containers running](screenshots/docker-ps.png)
 
 ## Cleanup
 

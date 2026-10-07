@@ -175,6 +175,22 @@ result means "clean", not "not working":
 | Gitleaks | `aws_access_key_id = AKIA…` committed | `aws-access-token` |
 | Trivy + gate | `node:14-alpine` | CVE-2025-7783 (form-data), CVE-2026-59873 (tar), CRITICAL → exit 1 |
 
+> **Screenshots:** every stage rerun live on 2026-10-08. Gitleaks now reports no leaks over the full history, because the reviewed lab finding is baselined (Finding 1 below). The control tests still prove that the scanner and the gate catch real problems.
+
+![1. Build + unit tests](screenshots/stage-1-build-unit-tests_24bcs10326.png)
+
+![2. SAST - Semgrep](screenshots/stage-2-sast-semgrep_24bcs10326.png)
+
+![3. SCA - dependency vulnerabilities](screenshots/stage-3-sca-dependency-vulnerabilities_24bcs10326.png)
+
+![4. Secret scanning - Gitleaks](screenshots/stage-4-secret-scanning-gitleaks_24bcs10326.png)
+
+![5. Docker build + container image scan - Trivy](screenshots/stage-5-docker-build-container-image-scan-trivy_24bcs10326.png)
+
+![6. Security gate](screenshots/stage-6-security-gate_24bcs10326.png)
+
+![7. Deploy the hardened manifests to Kubernetes](screenshots/stage-7-deploy-the-hardened-manifests-to-kubernetes_24bcs10326.png)
+
 ## Running the workflow on GitHub
 
 The workflow triggers on changes to the app, this folder or the workflow

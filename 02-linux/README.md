@@ -226,3 +226,5 @@ journalctl -u ssh.service -n 20 --no-pager
 - **Users:** `adduser` (interactive, recommended on Ubuntu) vs `useradd`
   (low-level, scripting).
 - **Logs:** `journalctl -u <service>` is the go-to for per-service systemd logs.
+
+![Linux tasks: commands and output](screenshots/linux-tasks.png)
